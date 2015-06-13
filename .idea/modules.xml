@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/screenjs.iml" filepath="$PROJECT_DIR$/screenjs.iml" />
+      <module fileurl="file://$PROJECT_DIR$/jDosWindow.iml" filepath="$PROJECT_DIR$/jDosWindow.iml" />
     </modules>
   </component>
 </project>
