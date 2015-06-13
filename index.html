@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Test jDosWindows</title>
+    <script src="jDosWindow.js"></script>
+
+
+</head>
+<body>
+    <button onclick="bouncingWindows()">Bouncing Windows</button>
+    <button onclick="screenDraw()">Screen Draw</button>
+    <br>
+    <br>
+    <div id="video-container">
+    </div>
+
+    <script>
+        var uiManagerObj = new UIManager(document.getElementById('video-container'), 80, 25);
+        var active;
+
+        var screenDraw = function() {
+            uiManagerObj.removeWindows();
+            active = "screenDraw";
+
+            var lines = [
+                " System  File  Edit  Database  Record  Program  Window                          ",
+                "                                                                                ",
+                "                                                                                ",
+                "                                                                                ",
+                " ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄                    ▄▄▄▄▄▄▄▄▄▄▄                                ",
+                "   ▄▄         ▄▄▄                      ▄▄       ▄▄                              ",
+                "   ▄▄           ▄                      ▄▄        ▄▄                             ",
+                "   ▄▄                                  ▄▄        ▄▄                             ",
+                "   ▄▄          ▄▄▄      ▄▄▄▄▄  ▄▄▄▄▄   ▄▄       ▄▄  ▄▄▄   ▄▄▄▄         ▄▄▄      ",
+                "   ▄▄▄▄▄    ▄▄     ▄▄     ▄▄    ▄▄     ▄▄▄▄▄▄▄▄▄      ▄▄ ▄▄   ▄▄    ▄▄     ▄▄   ",
+                "   ▄▄      ▄▄       ▄▄     ▄▄  ▄▄      ▄▄             ▄▄▄          ▄▄       ▄▄  ",
+                "   ▄▄     ▄▄         ▄▄     ▄▄▄        ▄▄             ▄▄          ▄▄         ▄▄ ",
+                "   ▄▄      ▄▄       ▄▄     ▄▄ ▄▄       ▄▄             ▄▄           ▄▄       ▄▄  ",
+                "   ▄▄       ▄▄     ▄▄     ▄▄   ▄▄      ▄▄             ▄▄            ▄▄     ▄▄   ",
+                " ▄▄▄▄▄▄▄       ▄▄▄      ▄▄▄▄▄  ▄▄▄▄  ▄▄▄▄▄▄         ▄▄▄▄▄▄             ▄▄▄      ",
+                "                                                                                ",
+                "                                                                                ",
+                "                                                                                ",
+                "                                                                                ",
+                "                                                                                ",
+                "                                                                                ",
+                "                                                                                ",
+                "                                                                                ",
+                "                                                                                ",
+                "                                                                                "];
+
+            var statusBox = [
+                "┌──────────────┐",
+                "│ Searching... │",
+                "└──────────────┘"
+            ];
+
+            var commandWindow = [
+                "■        Command         ≡",
+                "                          ",
+                "                          ",
+                "                          ",
+                "                          ",
+                " ◄♦                     ►."
+            ];
+
+            var commandWindowInside = [
+                " CREATE DATABASE        ",
+                "                        ",
+                "                        ",
+                "                        "
+            ];
+
+            var i;
+            for (i = 0; i < 80; i++) {
+                uiManagerObj.setCharacter(new Position(i, 0), lines[0].charAt(i), 'black', '#AAAAAA');
+            }
+
+            var l;
+            for (l = 1; l < 25; l++) {
+                for (i = 0; i < 80; i++) {
+                    uiManagerObj.setCharacter(new Position(i, l), lines[l].charAt(i), 'white', '#0000AA');
+                }
+            }
+
+            var windowRightSide = 75;
+            for (l = 0; l < statusBox.length; l++) {
+                for (i = 0; i < statusBox[0].length; i++) {
+                    uiManagerObj.setCharacter(new Position(windowRightSide - statusBox[0].length + i, l+1), statusBox[l].charAt(i), 'white', 'purple');
+                }
+            }
+            for (l = 0; l < statusBox[0].length; l++) {
+                uiManagerObj._video.setColor(new Position(windowRightSide - l + 1, statusBox.length+1), 'gray', 'black');
+            }
+            for (l = 0; l < statusBox.length-1; l++) {
+                uiManagerObj._video.setColor(new Position(windowRightSide, 2+l), 'gray', 'black');
+                uiManagerObj._video.setColor(new Position(windowRightSide+1, 2+l), 'gray', 'black');
+            }
+
+            for (l = 0; l < commandWindow.length; l++) {
+                for (i = 0; i < commandWindow[0].length; i++) {
+                    uiManagerObj.setCharacter(new Position(windowRightSide - commandWindow[0].length + i, l+16), commandWindow[l].charAt(i), 'yellow', '#AAAAAA');
+                }
+            }
+
+            for (l = 0; l < commandWindowInside.length; l++) {
+                for (i = 0; i < commandWindowInside[0].length; i++) {
+                    uiManagerObj.setCharacter(new Position(windowRightSide - 1 - commandWindowInside[0].length + i, l+17), commandWindowInside[l].charAt(i), 'white', '#00AAAA');
+                }
+            }
+            for (l = 0; l < commandWindowInside[0].length + 2; l++) {
+                uiManagerObj._video.setColor(new Position(windowRightSide - l + 1,commandWindowInside.length+18), 'gray', 'black');
+            }
+            for (l = 0; l < commandWindowInside.length+1; l++) {
+                uiManagerObj._video.setColor(new Position(windowRightSide, 17+l), 'gray', 'black');
+                uiManagerObj._video.setColor(new Position(windowRightSide+1, 17+l), 'gray', 'black');
+            }
+        };
+
+        var bouncingWindows = function() {
+            uiManagerObj.removeWindows();
+            active = "bouncingWindows";
+
+            var windowOne = new UIWindow("One", new Position(3, 3), new Size(20, 15));
+            uiManagerObj.pushWindow(windowOne);
+            var windowTwo = new UIWindow("Two", new Position(35, 8), new Size(20, 7));
+            uiManagerObj.pushWindow(windowTwo);
+            var windowThree = new UIWindow("Looooonnnnnnngggggggg", new Position(50, 20), new Size(15, 5));
+            uiManagerObj.pushWindow(windowThree);
+
+            var titles = ['AAAAAA', 'bbbbbbb', 'CcCcCcCcCc', 'DDDDDDdddddd'];
+
+            var accendingOne = true;
+            var growingTwoMode = 1;
+            var growCounter = 0;
+            var accendingThree = true;
+            var intervalId = setInterval(function () {
+                if (active !== "bouncingWindows") {
+                    clearInterval(intervalId);
+                    return;
+                }
+                if (windowOne._position.column >= 79) {
+                    accendingOne = false;
+                }
+                if (windowOne._position.column <= 0) {
+                    accendingOne = true;
+                }
+                windowOne.setPosition(new Position(windowOne._position.column + (accendingOne ? 1 : -1), windowOne._position.row));
+
+                var rowOffset = 0;
+                var colOffset = 0;
+                if (growingTwoMode === 1) {
+                    colOffset = 1;
+                }
+                else if (growingTwoMode === 2) {
+                    rowOffset = 1;
+                }
+                else if (growingTwoMode === 3) {
+                    colOffset = -1;
+                }
+                else if (growingTwoMode === 4) {
+                    rowOffset = -1;
+                }
+                growCounter = growCounter + 1;
+                if (growCounter % 6 === 0) {
+                    growingTwoMode = growingTwoMode + 1;
+                    if (growingTwoMode > 4) {
+                        growingTwoMode = 1;
+                    }
+                }
+                windowTwo.setSize(new Size(windowTwo._size.width + colOffset, windowTwo._size.height + rowOffset));
+                windowTwo.setTitle(titles[growingTwoMode - 1]);
+
+                if (windowThree._position.row >= 24) {
+                    accendingThree = false;
+                }
+                if (windowThree._position.row <= 0) {
+                    accendingThree = true;
+                }
+                windowThree.setPosition(new Position(windowThree._position.column, windowThree._position.row + (accendingThree ? 1 : -1)));
+
+                uiManagerObj.refresh();
+            }, 75);
+        };
+    </script>
+
+</body>
+</html>
