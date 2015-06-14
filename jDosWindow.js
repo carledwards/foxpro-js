@@ -1,3 +1,4 @@
+/*jslint bitwise: true */
 
 // ------------------------
 // Position
@@ -22,10 +23,44 @@ function Size(width, height) {
 }
 
 // ------------------------
+// utility functions
+// ------------------------
+function makeMouseOverHandler(uiManager, position) {
+    "use strict";
+    return function() {
+        uiManager.setMousePosition(position);
+    };
+}
+
+function rgbToHex(rgb) {
+    "use strict";
+    var a = rgb.split("(")[1].split(")")[0];
+    a = a.split(',');
+    var b = a.map(function(x){
+        x = parseInt(x, 10).toString(16);
+        return (x.length === 1) ? "0" + x : x;
+    });
+    return "0x" + b.join("");
+}
+
+function getInvertedColorCodeFromHex(hex) {
+    "use strict";
+    // "#" + (0x1000000 + parseInt((~(parseInt(hex, 16)) >>> 0).toString(2).slice(-24),2)).toString(16).slice(-6).toUpperCase();
+    var a = parseInt(hex, 16);
+    a = ~a;
+    a = a >>> 0;
+    a = a.toString(2).slice(-24);
+    a = parseInt(a, 2);
+    a = 0x1000000 + a;
+    a = a.toString(16).slice(-6).toUpperCase();
+    return "#" + a;
+}
+
+// ------------------------
 // Video Screen
 // ------------------------
 
-function Video(parentElement, columns, rows) {
+function Video(uiManager, parentElement, columns, rows) {
     "use strict";
     var newLine, i;
 
@@ -70,6 +105,7 @@ function Video(parentElement, columns, rows) {
             if (l === 0) {
                 cell.style.clear = 'left';
             }
+            cell.onmouseover = makeMouseOverHandler(uiManager, new Position(l, i));
             newLine.appendChild(cell);
             this._videoMap[i][l] = cell;
         }
@@ -99,6 +135,17 @@ Video.prototype.setColor = function (position, fcolor, bcolor) {
     this._videoMap[position.row][position.column].style.backgroundColor = bcolor || '';
 };
 
+Video.prototype.getColor = function (position) {
+    "use strict";
+    if (position.column >= this._columns || position.row >= this._rows) {
+        return;
+    }
+    return {
+        color: rgbToHex(window.getComputedStyle(this._videoMap[position.row][position.column], null).color),
+        backgroundColor: rgbToHex(window.getComputedStyle(this._videoMap[position.row][position.column], null).backgroundColor)
+    };
+};
+
 
 // ------------------------
 // UIManager
@@ -106,13 +153,19 @@ Video.prototype.setColor = function (position, fcolor, bcolor) {
 
 function UIManager(parentElement, columns, rows) {
     "use strict";
-    this._video = new Video(parentElement, columns, rows);
-    this._windowStack = [];
+    this._video = new Video(this, parentElement, columns, rows);
+    this.reset();
 }
 
 UIManager.prototype.removeWindows = function () {
     "use strict";
     this._windowStack = [];
+};
+
+UIManager.prototype.reset = function () {
+    "use strict";
+    this.removeWindows();
+    delete this._currentMousePosition;
 };
 
 UIManager.prototype.setCharacter = function (position, chr, fcolor, bcolor) {
@@ -142,6 +195,13 @@ UIManager.prototype.refresh = function() {
     for (i = 0; i < this._windowStack.length; i = i + 1) {
         this._windowStack[i].draw();
     }
+
+    // draw the mouse position
+    if (this._currentMousePosition) {
+        this._video.setColor(this._currentMousePosition,
+            getInvertedColorCodeFromHex(this._video.getColor(this._currentMousePosition).color),
+            getInvertedColorCodeFromHex(this._video.getColor(this._currentMousePosition).backgroundColor));
+    }
 };
 
 UIManager.prototype.pushWindow = function(window) {
@@ -157,6 +217,23 @@ UIManager.prototype.pushWindow = function(window) {
 UIManager.prototype.eventLoop = function() {
     "use strict";
     this.refresh();
+};
+
+UIManager.prototype.setMousePosition = function(position) {
+    "use strict";
+
+    // unset currently set mouse position
+    if (this._currentMousePosition) {
+        this._video.setColor(this._currentMousePosition,
+            getInvertedColorCodeFromHex(this._video.getColor(this._currentMousePosition).color),
+            getInvertedColorCodeFromHex(this._video.getColor(this._currentMousePosition).backgroundColor));
+    }
+
+    // draw the current mouse position
+    this._currentMousePosition = position;
+    this._video.setColor(this._currentMousePosition,
+        getInvertedColorCodeFromHex(this._video.getColor(position).color),
+        getInvertedColorCodeFromHex(this._video.getColor(position).backgroundColor));
 };
 
 

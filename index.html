@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <title>Test jDosWindows</title>
     <script src="jDosWindow.js"></script>
-
-
 </head>
 <body>
     <button onclick="bouncingWindows()">Bouncing Windows</button>
@@ -24,7 +22,7 @@
         }, 10);
 
         var screenDraw = function() {
-            uiManagerObj.removeWindows();
+            uiManagerObj.reset();
             active = "screenDraw";
 
             var lines = [
@@ -123,7 +121,7 @@
         };
 
         var bouncingWindows = function() {
-            uiManagerObj.removeWindows();
+            uiManagerObj.reset();
             active = "bouncingWindows";
 
             var windowOne = new UIWindow("One", new Position(3, 3), new Size(20, 15));
