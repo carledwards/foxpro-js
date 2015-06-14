@@ -25,17 +25,24 @@ function Size(width, height) {
 // ------------------------
 // utility functions
 // ------------------------
-function makeMouseOverHandler(uiManager, position) {
+function makeMouseUpHandler(uiManager, position) {
     "use strict";
     return function() {
-        uiManager.setMousePosition(position);
+        uiManager.handleMouseUp(position);
     };
 }
 
-function makeMouseClickHandler(uiManager, position) {
+function makeMouseDownHandler(uiManager, position) {
     "use strict";
     return function() {
-        uiManager.handleMouseClick(position);
+        uiManager.handleMouseDown(position);
+    };
+}
+
+function makeMouseOverHandler(uiManager, position) {
+    "use strict";
+    return function() {
+        uiManager.handleMouseOver(position);
     };
 }
 
@@ -116,7 +123,8 @@ function Video(uiManager, parentElement, columns, rows) {
 
             // mouse event handlers
             cell.onmouseover = makeMouseOverHandler(uiManager, new Position(l, i));
-            cell.onclick = makeMouseClickHandler(uiManager, new Position(l, i));
+            cell.onmousedown = makeMouseDownHandler(uiManager, new Position(l, i));
+            cell.onmouseup = makeMouseUpHandler(uiManager, new Position(l, i));
 
             // prevent mouse selection
             cell.style.userSelect = "none";
@@ -133,7 +141,7 @@ function Video(uiManager, parentElement, columns, rows) {
 
 Video.prototype.setCharacter = function (position, chr, fcolor, bcolor) {
     "use strict";
-    if (position.column >= this._columns || position.row >= this._rows) {
+    if (position.column >= this._columns || position.row >= this._rows || position.column < 0 || position.row < 0) {
         return;
     }
     if (!chr || chr.length < 1) {
@@ -146,7 +154,7 @@ Video.prototype.setCharacter = function (position, chr, fcolor, bcolor) {
 
 Video.prototype.setColor = function (position, fcolor, bcolor) {
     "use strict";
-    if (position.column >= this._columns || position.row >= this._rows) {
+    if (position.column >= this._columns || position.row >= this._rows || position.column < 0 || position.row < 0) {
         return;
     }
     this._videoMap[position.row][position.column].style.color = fcolor || '';
@@ -155,7 +163,7 @@ Video.prototype.setColor = function (position, fcolor, bcolor) {
 
 Video.prototype.getColor = function (position) {
     "use strict";
-    if (position.column >= this._columns || position.row >= this._rows) {
+    if (position.column >= this._columns || position.row >= this._rows || position.column < 0 || position.row < 0) {
         return;
     }
     return {
@@ -184,6 +192,7 @@ UIManager.prototype.reset = function () {
     "use strict";
     this.removeWindows();
     delete this._currentMousePosition;
+    delete this._windowInMove;
 };
 
 UIManager.prototype.setCharacter = function (position, chr, fcolor, bcolor) {
@@ -237,7 +246,7 @@ UIManager.prototype.eventLoop = function() {
     this.refresh();
 };
 
-UIManager.prototype.handleMouseClick = function(position) {
+UIManager.prototype.handleMouseDown = function(position) {
     "use strict";
     // TODO may want let the pass this event on to the window to handle on its own
 
@@ -261,6 +270,34 @@ UIManager.prototype.handleMouseClick = function(position) {
 
             break;
         }
+    }
+
+    // TODO this check should be moved to the Window depending on it's behavior/controls
+    // for the current window, check if are we in a move mode
+    var topWindow = this._windowStack.slice(-1)[0];
+    if (position.row === topWindow._position.row
+        && position.column > topWindow._position.column // do not include the control
+        && position.column < topWindow._position.column + topWindow._size.width - 1) {
+        this._windowInMove = {
+            window: topWindow,
+            columnDragOffset: position.column - topWindow._position.column
+        };
+    }
+};
+
+UIManager.prototype.handleMouseUp = function(position) {
+    "use strict";
+    delete this._windowInMove;
+};
+
+UIManager.prototype.handleMouseOver = function(position) {
+    "use strict";
+    this.setMousePosition(position);
+
+    if (this._windowInMove) {
+        this._windowInMove.window.setPosition(
+            new Position(position.column - this._windowInMove.columnDragOffset, position.row)
+        );
     }
 };
 
