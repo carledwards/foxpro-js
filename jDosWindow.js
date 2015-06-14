@@ -32,6 +32,13 @@ function makeMouseOverHandler(uiManager, position) {
     };
 }
 
+function makeMouseClickHandler(uiManager, position) {
+    "use strict";
+    return function() {
+        uiManager.handleMouseClick(position);
+    };
+}
+
 function rgbToHex(rgb) {
     "use strict";
     var a = rgb.split("(")[1].split(")")[0];
@@ -45,7 +52,6 @@ function rgbToHex(rgb) {
 
 function getInvertedColorCodeFromHex(hex) {
     "use strict";
-    // "#" + (0x1000000 + parseInt((~(parseInt(hex, 16)) >>> 0).toString(2).slice(-24),2)).toString(16).slice(-6).toUpperCase();
     var a = parseInt(hex, 16);
     a = ~a;
     a = a >>> 0;
@@ -100,12 +106,24 @@ function Video(uiManager, parentElement, columns, rows) {
         newLine.className = "p";
         for (l = 0; l < columns; l = l + 1) {
             cell = document.createElement('div');
+
+            // layout
             cell.style.float = 'left';
             cell.textContent = " ";
             if (l === 0) {
                 cell.style.clear = 'left';
             }
+
+            // mouse event handlers
             cell.onmouseover = makeMouseOverHandler(uiManager, new Position(l, i));
+            cell.onclick = makeMouseClickHandler(uiManager, new Position(l, i));
+
+            // prevent mouse selection
+            cell.style.userSelect = "none";
+            cell.style.webkitUserSelect = "none";
+            cell.style.mozUserSelect = "none";
+            cell.style.msUserSelect = "none";
+
             newLine.appendChild(cell);
             this._videoMap[i][l] = cell;
         }
@@ -219,6 +237,33 @@ UIManager.prototype.eventLoop = function() {
     this.refresh();
 };
 
+UIManager.prototype.handleMouseClick = function(position) {
+    "use strict";
+    // TODO may want let the pass this event on to the window to handle on its own
+
+    if (this._windowStack.length === 0) {
+        return;
+    }
+    var i, temp;
+    for (i = this._windowStack.length - 1; i >= 0; i = i - 1) {
+        if (position.row >= this._windowStack[i]._position.row
+            && position.column >= this._windowStack[i]._position.column
+            && position.row < this._windowStack[i]._position.row + this._windowStack[i]._size.height
+            && position.column < this._windowStack[i]._position.column + this._windowStack[i]._size.width) {
+
+            // only if this is not the top most window
+            if (i !== this._windowStack.length - 1) {
+                temp = this._windowStack.splice(i, 1)[0];
+                temp.setDirty();
+                this._windowStack.push(temp);
+                this.refresh();
+            }
+
+            break;
+        }
+    }
+};
+
 UIManager.prototype.setMousePosition = function(position) {
     "use strict";
 
@@ -330,11 +375,16 @@ UIWindow.prototype.draw = function () {
     this._isDirty = false;
 };
 
+UIWindow.prototype.setDirty = function () {
+    "use strict";
+    this._isDirty = true;
+};
+
 UIWindow.prototype.setPosition = function (position) {
     "use strict";
     if (!this._position || (position && (position.column !== this._position.column || position.row !== this._position.row))) {
         this._position = position;
-        this._isDirty = true;
+        this.setDirty();
     }
 };
 
@@ -342,7 +392,7 @@ UIWindow.prototype.setSize = function (size) {
     "use strict";
     if (!this._size || (size && (size.width !== this._size.width || size.height !== this._size.height))) {
         this._size = size;
-        this._isDirty = true;
+        this.setDirty();
     }
 };
 
@@ -350,6 +400,6 @@ UIWindow.prototype.setTitle = function (title) {
     "use strict";
     if (title !== this._title) {
         this._title = title;
-        this._isDirty = true;
+        this.setDirty();
     }
 };

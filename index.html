@@ -6,8 +6,9 @@
     <script src="jDosWindow.js"></script>
 </head>
 <body>
-    <button onclick="bouncingWindows()">Bouncing Windows</button>
-    <button onclick="screenDraw()">Screen Draw</button>
+    <button onclick="multipleWindows()">Multiple Windows</button>
+    <button onclick="animatedWindows()">Animated Windows</button>
+    <button onclick="characterDraw()">Character Draw</button>
     <br>
     <br>
     <div id="video-container">
@@ -21,9 +22,9 @@
             uiManagerObj.eventLoop();
         }, 10);
 
-        var screenDraw = function() {
+        function characterDraw() {
             uiManagerObj.reset();
-            active = "screenDraw";
+            active = "characterDraw";
 
             var lines = [
                 " System  File  Edit  Database  Record  Program  Window                          ",
@@ -120,9 +121,21 @@
             }
         };
 
-        var bouncingWindows = function() {
+        function multipleWindows() {
             uiManagerObj.reset();
-            active = "bouncingWindows";
+            active = "multipleWindows";
+
+            var windowOne = new UIWindow("One", new Position(3, 3), new Size(20, 15));
+            uiManagerObj.pushWindow(windowOne);
+            var windowTwo = new UIWindow("Two", new Position(18, 5), new Size(20, 7));
+            uiManagerObj.pushWindow(windowTwo);
+            var windowThree = new UIWindow("Three", new Position(15, 10), new Size(15, 5));
+            uiManagerObj.pushWindow(windowThree);
+        };
+
+        function animatedWindows() {
+            uiManagerObj.reset();
+            active = "animatedWindows";
 
             var windowOne = new UIWindow("One", new Position(3, 3), new Size(20, 15));
             uiManagerObj.pushWindow(windowOne);
@@ -138,7 +151,7 @@
             var growCounter = 0;
             var accendingThree = true;
             var intervalId = setInterval(function () {
-                if (active !== "bouncingWindows") {
+                if (active !== "animatedWindows") {
                     clearInterval(intervalId);
                     return;
                 }
