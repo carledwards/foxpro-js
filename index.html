@@ -19,6 +19,10 @@
         var uiManagerObj = new UIManager(document.getElementById('video-container'), 80, 25);
         var active;
 
+        setInterval(function() {
+            uiManagerObj.eventLoop();
+        }, 10);
+
         var screenDraw = function() {
             uiManagerObj.removeWindows();
             active = "screenDraw";
@@ -179,8 +183,6 @@
                     accendingThree = true;
                 }
                 windowThree.setPosition(new Position(windowThree._position.column, windowThree._position.row + (accendingThree ? 1 : -1)));
-
-                uiManagerObj.refresh();
             }, 75);
         };
     </script>

@@ -122,13 +122,23 @@ UIManager.prototype.setCharacter = function (position, chr, fcolor, bcolor) {
 
 UIManager.prototype.refresh = function() {
     "use strict";
+
+    var isDirty = false, i;
+    for (i = 0; !isDirty && i < this._windowStack.length; i = i + 1) {
+        isDirty = this._windowStack[i].isDirty();
+    }
+
+    if (!isDirty) {
+        return;
+    }
+
     var col, row;
     for (col = 0; col < this._video._columns; col = col + 1) {
         for (row = 0; row < this._video._rows; row = row + 1) {
             this.setCharacter(new Position(col, row), ' ', 'white', '#0000AA');
         }
     }
-    var i;
+
     for (i = 0; i < this._windowStack.length; i = i + 1) {
         this._windowStack[i].draw();
     }
@@ -144,6 +154,11 @@ UIManager.prototype.pushWindow = function(window) {
     return window;
 };
 
+UIManager.prototype.eventLoop = function() {
+    "use strict";
+    this.refresh();
+};
+
 
 // ------------------------
 // UIWindow
@@ -154,11 +169,17 @@ function UIWindow(title, position, size) {
     this.setTitle(title);
     this.setPosition(position);
     this.setSize(size);
+    this._isDirty = true;
     }
 
 UIWindow.prototype.setUIManager = function (uiManagerObj) {
     "use strict";
     this._uiManager = uiManagerObj;
+};
+
+UIWindow.prototype.isDirty = function() {
+    "use strict";
+    return this._isDirty;
 };
 
 UIWindow.prototype.draw = function () {
@@ -228,22 +249,30 @@ UIWindow.prototype.draw = function () {
                 ' ', 'white', '#00AAAA');
         }
     }
+
+    this._isDirty = false;
 };
 
 UIWindow.prototype.setPosition = function (position) {
     "use strict";
-    // TODO validate the position
-    this._position = position;
+    if (!this._position || (position && (position.column !== this._position.column || position.row !== this._position.row))) {
+        this._position = position;
+        this._isDirty = true;
+    }
 };
 
 UIWindow.prototype.setSize = function (size) {
     "use strict";
-    // TODO validate the size
-    this._size = size;
+    if (!this._size || (size && (size.width !== this._size.width || size.height !== this._size.height))) {
+        this._size = size;
+        this._isDirty = true;
+    }
 };
 
 UIWindow.prototype.setTitle = function (title) {
     "use strict";
-    // TODO validate the title
-    this._title = title;
+    if (title !== this._title) {
+        this._title = title;
+        this._isDirty = true;
+    }
 };
