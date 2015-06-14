@@ -165,23 +165,36 @@ UIWindow.prototype.draw = function () {
     "use strict";
     var col, row;
 
-    // draw the outside chrome
+    // draw the chrome
     for (col = 0; col < this._size.width; col = col + 1) {
-        for (row = 0; row < this._size.height; row = row + 1) {
-            this._uiManager._video.setCharacter(
-                new Position(col + this._position.column, row + this._position.row),
-                ' ', 'yellow', '#AAAAAA');
-        }
+        // top
+        this._uiManager._video.setCharacter(
+            new Position(col + this._position.column, this._position.row),
+            ' ', 'yellow', '#AAAAAA');
+        // bottom
+        this._uiManager._video.setCharacter(
+            new Position(col + this._position.column, this._position.row + this._size.height - 1),
+            ' ', 'yellow', '#AAAAAA');
+    }
+
+    for (row = 1; row < this._size.height - 1; row = row + 1) {
+        // left
+        this._uiManager._video.setCharacter(
+            new Position(this._position.column, row + this._position.row),
+            ' ', 'yellow', '#AAAAAA');
+        // right
+        this._uiManager._video.setCharacter(
+            new Position(this._position.column + this._size.width - 1, row + this._position.row),
+            ' ', 'yellow', '#AAAAAA');
     }
 
     // draw the chrome controls
-    this._uiManager._video.setCharacter(new Position(this._position.column, this._position.row), '■', 'yellow', '#AAAAA');
-    this._uiManager._video.setCharacter(new Position(this._position.column + this._size.width - 1, this._position.row), '≡', 'yellow', '#AAAAA');
+    this._uiManager._video.setCharacter(new Position(this._position.column, this._position.row), '■', 'yellow', '#AAAAAA');
+    this._uiManager._video.setCharacter(new Position(this._position.column + this._size.width - 1, this._position.row), '≡', 'yellow', '#AAAAAA');
     this._uiManager._video.setCharacter(new Position(this._position.column + this._size.width - 1, this._position.row + this._size.height - 1), '.', 'yellow', '#AAAAA');
 
     // draw the title (if set)
     if (this._title) {
-        // TODO optimize and handle overflow
         var maxTitleLength = this._title.length > this._size.width - 4 ? this._size.width - 4 : this._title.length;
         for (col = 0; col < maxTitleLength; col = col + 1) {
             this._uiManager._video.setCharacter(
