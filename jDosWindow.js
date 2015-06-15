@@ -34,8 +34,8 @@ function makeMouseUpHandler(uiManager, position) {
 
 function makeMouseDownHandler(uiManager, position) {
     "use strict";
-    return function() {
-        uiManager.handleMouseDown(position);
+    return function(e) {
+        uiManager.handleMouseDown(position, e);
     };
 }
 
@@ -246,7 +246,7 @@ UIManager.prototype.eventLoop = function() {
     this.refresh();
 };
 
-UIManager.prototype.handleMouseDown = function(position) {
+UIManager.prototype.handleMouseDown = function(position, e) {
     "use strict";
     // TODO may want let the pass this event on to the window to handle on its own
 
@@ -254,14 +254,20 @@ UIManager.prototype.handleMouseDown = function(position) {
         return;
     }
     var i, temp;
+
+    var evt = e ? e : window.event;
+
+    var targetWindow;
     for (i = this._windowStack.length - 1; i >= 0; i = i - 1) {
         if (position.row >= this._windowStack[i]._position.row
             && position.column >= this._windowStack[i]._position.column
             && position.row < this._windowStack[i]._position.row + this._windowStack[i]._size.height
             && position.column < this._windowStack[i]._position.column + this._windowStack[i]._size.width) {
 
-            // only if this is not the top most window
-            if (i !== this._windowStack.length - 1) {
+            targetWindow = this._windowStack[i];
+
+            // only if this is not the top most window AND the ShiftKey is not pressed
+            if (!evt.shiftKey && i !== this._windowStack.length - 1) {
                 temp = this._windowStack.splice(i, 1)[0];
                 temp.setDirty();
                 this._windowStack.push(temp);
@@ -274,19 +280,18 @@ UIManager.prototype.handleMouseDown = function(position) {
 
     // TODO this check should be moved to the Window depending on it's behavior/controls
     // for the current window, check if are we in a move mode
-    var topWindow = this._windowStack.slice(-1)[0];
-    if (position.row === topWindow._position.row
-        && position.column > topWindow._position.column // do not include the control
-        && position.column < topWindow._position.column + topWindow._size.width - 1) {
+    if (position.row === targetWindow._position.row
+        && position.column > targetWindow._position.column // do not include the control
+        && position.column < targetWindow._position.column + targetWindow._size.width - 1) {
         this._windowInMove = {
-            window: topWindow,
-            columnDragOffset: position.column - topWindow._position.column
+            window: targetWindow,
+            columnDragOffset: position.column - targetWindow._position.column
         };
     }
-    else if (position.row === topWindow._position.row + topWindow._size.height - 1
-        && position.column === topWindow._position.column + topWindow._size.width - 1) {
+    else if (position.row === targetWindow._position.row + targetWindow._size.height - 1
+        && position.column === targetWindow._position.column + targetWindow._size.width - 1) {
         this._windowInResize = {
-            window: topWindow
+            window: targetWindow
         };
     }
 };
