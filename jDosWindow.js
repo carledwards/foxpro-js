@@ -283,11 +283,18 @@ UIManager.prototype.handleMouseDown = function(position) {
             columnDragOffset: position.column - topWindow._position.column
         };
     }
+    else if (position.row === topWindow._position.row + topWindow._size.height - 1
+        && position.column === topWindow._position.column + topWindow._size.width - 1) {
+        this._windowInResize = {
+            window: topWindow
+        };
+    }
 };
 
 UIManager.prototype.handleMouseUp = function(position) {
     "use strict";
     delete this._windowInMove;
+    delete this._windowInResize;
 };
 
 UIManager.prototype.handleMouseOver = function(position) {
@@ -298,6 +305,14 @@ UIManager.prototype.handleMouseOver = function(position) {
         this._windowInMove.window.setPosition(
             new Position(position.column - this._windowInMove.columnDragOffset, position.row)
         );
+        this.refresh();
+    } else if (this._windowInResize) {
+        var width = position.column - this._windowInResize.window._position.column + 1;
+        var height = position.row - this._windowInResize.window._position.row + 1;
+        width = width < 5 ? 5 : width;
+        height = height < 3 ? 3 : height;
+        this._windowInResize.window.setSize(new Size(width, height));
+        this.refresh();
     }
 };
 
