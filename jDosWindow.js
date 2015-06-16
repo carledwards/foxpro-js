@@ -27,8 +27,8 @@ function Size(width, height) {
 // ------------------------
 function makeMouseUpHandler(uiManager, position) {
     "use strict";
-    return function() {
-        uiManager.handleMouseUp(position);
+    return function(e) {
+        uiManager.handleMouseUp(position, e);
     };
 }
 
@@ -41,8 +41,8 @@ function makeMouseDownHandler(uiManager, position) {
 
 function makeMouseOverHandler(uiManager, position) {
     "use strict";
-    return function() {
-        uiManager.handleMouseOver(position);
+    return function(e) {
+        uiManager.handleMouseOver(position, e);
     };
 }
 
@@ -248,76 +248,38 @@ UIManager.prototype.eventLoop = function() {
 
 UIManager.prototype.handleMouseDown = function(position, e) {
     "use strict";
-    // TODO may want let the pass this event on to the window to handle on its own
-
     if (this._windowStack.length === 0) {
         return;
     }
-    var i, temp;
-
-    var evt = e ? e : window.event;
-
-    var targetWindow;
+    var i, temp, evt = e || window.event;
     for (i = this._windowStack.length - 1; i >= 0; i = i - 1) {
-        if (position.row >= this._windowStack[i]._position.row
-            && position.column >= this._windowStack[i]._position.column
-            && position.row < this._windowStack[i]._position.row + this._windowStack[i]._size.height
-            && position.column < this._windowStack[i]._position.column + this._windowStack[i]._size.width) {
-
-            targetWindow = this._windowStack[i];
-
-            // only if this is not the top most window AND the ShiftKey is not pressed
-            if (!evt.shiftKey && i !== this._windowStack.length - 1) {
-                temp = this._windowStack.splice(i, 1)[0];
-                temp.setDirty();
-                this._windowStack.push(temp);
-                this.refresh();
-            }
-
+        temp = this._windowStack[i];
+        if (temp.handleMouseDown(position, evt)) {
+            this._targetMouseWindow = temp;
             break;
         }
     }
-
-    // TODO this check should be moved to the Window depending on it's behavior/controls
-    // for the current window, check if are we in a move mode
-    if (position.row === targetWindow._position.row
-        && position.column > targetWindow._position.column // do not include the control
-        && position.column < targetWindow._position.column + targetWindow._size.width - 1) {
-        this._windowInMove = {
-            window: targetWindow,
-            columnDragOffset: position.column - targetWindow._position.column
-        };
-    }
-    else if (position.row === targetWindow._position.row + targetWindow._size.height - 1
-        && position.column === targetWindow._position.column + targetWindow._size.width - 1) {
-        this._windowInResize = {
-            window: targetWindow
-        };
-    }
 };
 
-UIManager.prototype.handleMouseUp = function(position) {
+UIManager.prototype.handleMouseUp = function(position, e) {
     "use strict";
-    delete this._windowInMove;
-    delete this._windowInResize;
+    if (this._targetMouseWindow) {
+        var evt = e || window.event;
+        if(this._targetMouseWindow.handleMouseUp(position, evt)) {
+            this.refresh();
+        }
+        delete this._targetMouseWindow;
+    }
 };
 
-UIManager.prototype.handleMouseOver = function(position) {
+UIManager.prototype.handleMouseOver = function(position, e) {
     "use strict";
     this.setMousePosition(position);
-
-    if (this._windowInMove) {
-        this._windowInMove.window.setPosition(
-            new Position(position.column - this._windowInMove.columnDragOffset, position.row)
-        );
-        this.refresh();
-    } else if (this._windowInResize) {
-        var width = position.column - this._windowInResize.window._position.column + 1;
-        var height = position.row - this._windowInResize.window._position.row + 1;
-        width = width < 5 ? 5 : width;
-        height = height < 3 ? 3 : height;
-        this._windowInResize.window.setSize(new Size(width, height));
-        this.refresh();
+    if (this._targetMouseWindow) {
+        var evt = e || window.event;
+        if (this._targetMouseWindow.handleMouseOver(position, evt)) {
+            this.refresh();
+        }
     }
 };
 
@@ -336,6 +298,20 @@ UIManager.prototype.setMousePosition = function(position) {
     this._video.setColor(this._currentMousePosition,
         getInvertedColorCodeFromHex(this._video.getColor(position).color),
         getInvertedColorCodeFromHex(this._video.getColor(position).backgroundColor));
+};
+
+UIManager.prototype.moveWindowToFront = function(win) {
+    "use strict";
+    var i, temp;
+    for (i = 0; i < this._windowStack.length; i = i + 1) {
+        if (this._windowStack[i] === win) {
+            temp = this._windowStack.splice(i, 1)[0];
+            temp.setDirty();
+            this._windowStack.push(temp);
+            this.refresh();
+            break;
+        }
+    }
 };
 
 
@@ -359,6 +335,62 @@ UIWindow.prototype.setUIManager = function (uiManagerObj) {
 UIWindow.prototype.isDirty = function() {
     "use strict";
     return this._isDirty;
+};
+
+UIWindow.prototype.handleMouseDown = function (position, evt) {
+    "use strict";
+
+    if (position.row >= this._position.row
+        && position.column >= this._position.column
+        && position.row < this._position.row + this._size.height
+        && position.column < this._position.column + this._size.width) {
+
+        if (!evt.shiftKey) {
+            this._uiManager.moveWindowToFront(this);
+        }
+
+        if (position.row === this._position.row
+            && position.column > this._position.column // do not include the control
+            && position.column < this._position.column + this._size.width - 1) {
+            this._inMouseMove = {
+                columnDragOffset: position.column - this._position.column
+            };
+        }
+        else if (position.row === this._position.row + this._size.height - 1
+            && position.column === this._position.column + this._size.width - 1) {
+            this._inMouseResize = {
+            };
+        }
+
+        return true;
+    }
+
+    return false;
+};
+
+UIWindow.prototype.handleMouseUp = function(position, evt) {
+    "use strict";
+    delete this._inMouseMove;
+    delete this._inMouseResize;
+    return true;
+};
+
+UIWindow.prototype.handleMouseOver = function(position, evt) {
+    "use strict";
+    if (this._inMouseMove) {
+        this.setPosition(
+            new Position(position.column - this._inMouseMove.columnDragOffset, position.row)
+        );
+        return true;
+    } else if (this._inMouseResize) {
+        var width = position.column - this._position.column + 1;
+        var height = position.row - this._position.row + 1;
+        width = width < 5 ? 5 : width;
+        height = height < 3 ? 3 : height;
+        this.setSize(new Size(width, height));
+        return true;
+    }
+    return false;
 };
 
 UIWindow.prototype.draw = function () {
