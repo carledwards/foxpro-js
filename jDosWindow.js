@@ -325,6 +325,7 @@ function UIWindow(title, position, size) {
     this.setPosition(position);
     this.setSize(size);
     this._isDirty = true;
+    this._isFullScreen = false;
     }
 
 UIWindow.prototype.setUIManager = function (uiManagerObj) {
@@ -340,6 +341,8 @@ UIWindow.prototype.isDirty = function() {
 UIWindow.prototype.handleMouseDown = function (position, evt) {
     "use strict";
 
+    this._mouseDownPosition = position;
+
     if (position.row >= this._position.row
         && position.column >= this._position.column
         && position.row < this._position.row + this._size.height
@@ -349,17 +352,18 @@ UIWindow.prototype.handleMouseDown = function (position, evt) {
             this._uiManager.moveWindowToFront(this);
         }
 
-        if (position.row === this._position.row
-            && position.column > this._position.column // do not include the control
-            && position.column < this._position.column + this._size.width - 1) {
-            this._inMouseMove = {
-                columnDragOffset: position.column - this._position.column
-            };
-        }
-        else if (position.row === this._position.row + this._size.height - 1
-            && position.column === this._position.column + this._size.width - 1) {
-            this._inMouseResize = {
-            };
+        if (!this._isFullScreen) {
+            if (position.row === this._position.row
+                && position.column > this._position.column // do not include the control
+                && position.column < this._position.column + this._size.width - 1) {
+                this._inMouseMove = {
+                    columnDragOffset: position.column - this._position.column
+                };
+            }
+            else if (position.row === this._position.row + this._size.height - 1
+                && position.column === this._position.column + this._size.width - 1) {
+                this._inMouseResize = {};
+            }
         }
 
         return true;
@@ -372,6 +376,33 @@ UIWindow.prototype.handleMouseUp = function(position, evt) {
     "use strict";
     delete this._inMouseMove;
     delete this._inMouseResize;
+
+    // check that the mouse down and up are in the same location
+    if (this._mouseDownPosition && this._mouseDownPosition.row === position.row
+        && this._mouseDownPosition.column === position.column) {
+
+        // full screen/restore control selected
+        if (this._mouseDownPosition.row === this._position.row
+            && this._mouseDownPosition.column === this._position.column + this._size.width - 1) {
+            if (this._isFullScreen) {
+                this._isFullScreen = false;
+                this.setPosition(this._restoreWindow.position);
+                this.setSize(this._restoreWindow.size);
+            }
+            else {
+                this._isFullScreen = true;
+                this._restoreWindow = {
+                    position: this._position,
+                    size: this._size
+                };
+                this.setPosition(new Position(0, 0));
+                this.setSize(new Size(this._uiManager._video._columns, this._uiManager._video._rows));
+            }
+            this.setDirty(); // force the resize control to be redrawn even if the window size is already the maximum size
+        }
+    }
+
+    delete this._mouseDownPosition;
     return true;
 };
 
@@ -423,7 +454,10 @@ UIWindow.prototype.draw = function () {
     // draw the chrome controls
     this._uiManager._video.setCharacter(new Position(this._position.column, this._position.row), '■', 'yellow', '#AAAAAA');
     this._uiManager._video.setCharacter(new Position(this._position.column + this._size.width - 1, this._position.row), '≡', 'yellow', '#AAAAAA');
-    this._uiManager._video.setCharacter(new Position(this._position.column + this._size.width - 1, this._position.row + this._size.height - 1), '.', 'yellow', '#AAAAA');
+
+    if (!this._isFullScreen) {
+        this._uiManager._video.setCharacter(new Position(this._position.column + this._size.width - 1, this._position.row + this._size.height - 1), '.', 'yellow', '#AAAAA');
+    }
 
     // draw the title (if set)
     if (this._title) {
