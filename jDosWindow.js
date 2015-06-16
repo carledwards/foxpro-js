@@ -200,16 +200,18 @@ UIManager.prototype.setCharacter = function (position, chr, fcolor, bcolor) {
     this._video.setCharacter(position, chr, fcolor, bcolor);
 };
 
-UIManager.prototype.refresh = function() {
+UIManager.prototype.refresh = function(forceFlag) {
     "use strict";
 
-    var isDirty = false, i;
-    for (i = 0; !isDirty && i < this._windowStack.length; i = i + 1) {
-        isDirty = this._windowStack[i].isDirty();
-    }
+    if (!forceFlag) {
+        var isDirty = false, i;
+        for (i = 0; !isDirty && i < this._windowStack.length; i = i + 1) {
+            isDirty = this._windowStack[i].isDirty();
+        }
 
-    if (!isDirty) {
-        return;
+        if (!isDirty) {
+            return;
+        }
     }
 
     var col, row;
@@ -314,6 +316,17 @@ UIManager.prototype.moveWindowToFront = function(win) {
     }
 };
 
+UIManager.prototype.removeWindow = function(win) {
+    "use strict";
+    var i;
+    for (i = 0; i < this._windowStack.length; i = i + 1) {
+        if (this._windowStack[i] === win) {
+            this._windowStack.splice(i, 1);
+            this.refresh(true);
+            break;
+        }
+    }
+};
 
 // ------------------------
 // UIWindow
@@ -399,6 +412,11 @@ UIWindow.prototype.handleMouseUp = function(position, evt) {
                 this.setSize(new Size(this._uiManager._video._columns, this._uiManager._video._rows));
             }
             this.setDirty(); // force the resize control to be redrawn even if the window size is already the maximum size
+        }
+        // close control
+        else if (this._mouseDownPosition.row === this._position.row
+            && this._mouseDownPosition.column === this._position.column) {
+            this._uiManager.removeWindow(this);
         }
     }
 
