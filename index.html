@@ -15,7 +15,7 @@
     </div>
 
     <script>
-        var uiManagerObj = new UIManager(document.getElementById('video-container'), 80, 25);
+        var uiManagerObj = new UIManager(document.getElementById('video-container'), 80, 25, new FoxProTheme());
         var active;
 
         setInterval(function() {
@@ -77,24 +77,24 @@
 
             var i;
             for (i = 0; i < 80; i++) {
-                uiManagerObj.setCharacter(new Position(i, 0), lines[0].charAt(i), 'black', '#AAAAAA');
+                uiManagerObj.setCharacter(new Position(i, 0), lines[0].charAt(i), {color:'black', background:'#AAAAAA'});
             }
 
             var l;
             for (l = 1; l < 25; l++) {
                 for (i = 0; i < 80; i++) {
-                    uiManagerObj.setCharacter(new Position(i, l), lines[l].charAt(i), 'white', '#0000AA');
+                    uiManagerObj.setCharacter(new Position(i, l), lines[l].charAt(i), {color:'white', background:'#0000AA'});
                 }
             }
 
             var windowRightSide = 75;
             for (l = 0; l < statusBox.length; l++) {
                 for (i = 0; i < statusBox[0].length; i++) {
-                    uiManagerObj.setCharacter(new Position(windowRightSide - statusBox[0].length + i, l+1), statusBox[l].charAt(i), 'white', 'purple');
+                    uiManagerObj.setCharacter(new Position(windowRightSide - statusBox[0].length + i, l+1), statusBox[l].charAt(i), {color:'white', background:'purple'});
                 }
             }
             for (l = 0; l < statusBox[0].length; l++) {
-                uiManagerObj._video.setColor(new Position(windowRightSide - l + 1, statusBox.length+1), 'gray', 'black');
+                uiManagerObj._video.setColor(new Position(windowRightSide - l + 1, statusBox.length+1), {color:'gray', background:'black'});
             }
             for (l = 0; l < statusBox.length-1; l++) {
                 uiManagerObj._video.setColor(new Position(windowRightSide, 2+l), 'gray', 'black');
@@ -103,21 +103,21 @@
 
             for (l = 0; l < commandWindow.length; l++) {
                 for (i = 0; i < commandWindow[0].length; i++) {
-                    uiManagerObj.setCharacter(new Position(windowRightSide - commandWindow[0].length + i, l+16), commandWindow[l].charAt(i), 'yellow', '#AAAAAA');
+                    uiManagerObj.setCharacter(new Position(windowRightSide - commandWindow[0].length + i, l+16), commandWindow[l].charAt(i), {color:'yellow', background:'#AAAAAA'});
                 }
             }
 
             for (l = 0; l < commandWindowInside.length; l++) {
                 for (i = 0; i < commandWindowInside[0].length; i++) {
-                    uiManagerObj.setCharacter(new Position(windowRightSide - 1 - commandWindowInside[0].length + i, l+17), commandWindowInside[l].charAt(i), 'white', '#00AAAA');
+                    uiManagerObj.setCharacter(new Position(windowRightSide - 1 - commandWindowInside[0].length + i, l+17), commandWindowInside[l].charAt(i), {color:'white', background:'#00AAAA'});
                 }
             }
             for (l = 0; l < commandWindowInside[0].length + 2; l++) {
-                uiManagerObj._video.setColor(new Position(windowRightSide - l + 1,commandWindowInside.length+18), 'gray', 'black');
+                uiManagerObj._video.setColor(new Position(windowRightSide - l + 1,commandWindowInside.length+18), {color:'gray', background:'black'});
             }
             for (l = 0; l < commandWindowInside.length+1; l++) {
-                uiManagerObj._video.setColor(new Position(windowRightSide, 17+l), 'gray', 'black');
-                uiManagerObj._video.setColor(new Position(windowRightSide+1, 17+l), 'gray', 'black');
+                uiManagerObj._video.setColor(new Position(windowRightSide, 17+l), {color:'gray', background:'black'});
+                uiManagerObj._video.setColor(new Position(windowRightSide+1, 17+l), {color:'gray', background:'black'});
             }
         };
 

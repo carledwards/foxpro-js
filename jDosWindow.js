@@ -1,6 +1,19 @@
 /*jslint bitwise: true */
 
 // ------------------------
+// Theme
+// ------------------------
+function FoxProTheme() {
+    "use strict";
+    return {
+        screenBackground: {color: 'white', background: '#0000AA'},
+        windowBorder: {color: 'yellow', background: '#AAAAAA' },
+        textEdit: {color: 'white', background: '#00AAAA'},
+        windowShadow: {color: 'gray', background: 'black'}
+    };
+}
+
+// ------------------------
 // Position
 // ------------------------
 function Position(column, row) {
@@ -147,7 +160,7 @@ function Video(uiManager, parentElement, columns, rows) {
     }
 }
 
-Video.prototype.setCharacter = function (position, chr, fcolor, bcolor) {
+Video.prototype.setCharacter = function (position, chr, colorPair) {
     "use strict";
     if (position.column >= this._columns || position.row >= this._rows || position.column < 0 || position.row < 0) {
         return;
@@ -156,8 +169,8 @@ Video.prototype.setCharacter = function (position, chr, fcolor, bcolor) {
         return;
     }
     this._videoMap[position.row][position.column].textContent = chr.charAt(0) === ' ' ? '\u00A0' : chr.charAt(0);
-    this._videoMap[position.row][position.column].style.color = fcolor || '';
-    this._videoMap[position.row][position.column].style.backgroundColor = bcolor || '';
+    this._videoMap[position.row][position.column].style.color = colorPair.color || '';
+    this._videoMap[position.row][position.column].style.backgroundColor = colorPair.background || '';
 };
 
 Video.prototype.setColor = function (position, fcolor, bcolor) {
@@ -185,9 +198,10 @@ Video.prototype.getColor = function (position) {
 // UIManager
 // ------------------------
 
-function UIManager(parentElement, columns, rows) {
+function UIManager(parentElement, columns, rows, theme) {
     "use strict";
     this._video = new Video(this, parentElement, columns, rows);
+    this._theme = theme;
     this.reset();
 }
 
@@ -203,16 +217,17 @@ UIManager.prototype.reset = function () {
     delete this._windowInMove;
 };
 
-UIManager.prototype.setCharacter = function (position, chr, fcolor, bcolor) {
+UIManager.prototype.setCharacter = function (position, chr, colorPair) {
     "use strict";
-    this._video.setCharacter(position, chr, fcolor, bcolor);
+    this._video.setCharacter(position, chr, colorPair);
 };
 
 UIManager.prototype.refresh = function(forceFlag) {
     "use strict";
 
+    var i;
     if (!forceFlag) {
-        var isDirty = false, i;
+        var isDirty = false;
         for (i = 0; !isDirty && i < this._windowStack.length; i = i + 1) {
             isDirty = this._windowStack[i].isDirty();
         }
@@ -225,7 +240,7 @@ UIManager.prototype.refresh = function(forceFlag) {
     var col, row;
     for (col = 0; col < this._video._columns; col = col + 1) {
         for (row = 0; row < this._video._rows; row = row + 1) {
-            this.setCharacter(new Position(col, row), ' ', 'white', '#0000AA');
+            this.setCharacter(new Position(col, row), ' ', this._theme.screenBackground);
         }
     }
 
@@ -504,30 +519,30 @@ UIWindow.prototype.draw = function () {
         // top
         this._uiManager._video.setCharacter(
             new Position(col + this._position.column, this._position.row),
-            ' ', 'yellow', '#AAAAAA');
+            ' ', this._uiManager._theme.windowBorder);
         // bottom
         this._uiManager._video.setCharacter(
             new Position(col + this._position.column, this._position.row + this._size.height - 1),
-            ' ', 'yellow', '#AAAAAA');
+            ' ', this._uiManager._theme.windowBorder);
     }
 
     for (row = 1; row < this._size.height - 1; row = row + 1) {
         // left
         this._uiManager._video.setCharacter(
             new Position(this._position.column, row + this._position.row),
-            ' ', 'yellow', '#AAAAAA');
+            ' ', this._uiManager._theme.windowBorder);
         // right
         this._uiManager._video.setCharacter(
             new Position(this._position.column + this._size.width - 1, row + this._position.row),
-            ' ', 'yellow', '#AAAAAA');
+            ' ', this._uiManager._theme.windowBorder);
     }
 
     // draw the chrome controls
-    this._uiManager._video.setCharacter(new Position(this._position.column, this._position.row), '■', 'yellow', '#AAAAAA');
-    this._uiManager._video.setCharacter(new Position(this._position.column + this._size.width - 1, this._position.row), '≡', 'yellow', '#AAAAAA');
+    this._uiManager._video.setCharacter(new Position(this._position.column, this._position.row), '■', this._uiManager._theme.windowBorder);
+    this._uiManager._video.setCharacter(new Position(this._position.column + this._size.width - 1, this._position.row), '≡', this._uiManager._theme.windowBorder);
 
     if (!this._isFullScreen) {
-        this._uiManager._video.setCharacter(new Position(this._position.column + this._size.width - 1, this._position.row + this._size.height - 1), '.', 'yellow', '#AAAAA');
+        this._uiManager._video.setCharacter(new Position(this._position.column + this._size.width - 1, this._position.row + this._size.height - 1), '.', this._uiManager._theme.windowBorder);
     }
 
     // draw the title (if set)
@@ -536,7 +551,7 @@ UIWindow.prototype.draw = function () {
         for (col = 0; col < maxTitleLength; col = col + 1) {
             this._uiManager._video.setCharacter(
                 new Position(Math.ceil((this._size.width / 2) + this._position.column + col - (maxTitleLength / 2)),
-                    this._position.row), this._title.charAt(col), 'yellow', '#AAAA');
+                    this._position.row), this._title.charAt(col), this._uiManager._theme.windowBorder);
         }
     }
 
@@ -562,7 +577,7 @@ UIWindow.prototype.draw = function () {
         for (row = 1; row < this._size.height - 1; row = row + 1) {
             this._uiManager._video.setCharacter(
                 new Position(col + this._position.column, row + this._position.row),
-                ' ', 'white', '#00AAAA');
+                ' ', this._uiManager._theme.textEdit);
         }
     }
 
