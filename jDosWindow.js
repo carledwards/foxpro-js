@@ -295,6 +295,7 @@ UIManager.prototype.handleMouseUp = function(position, e) {
         }
         delete this._targetMouseWindow;
     }
+    this.setHideMouseTimer();
 };
 
 UIManager.prototype.handleMouseOver = function(position, e) {
@@ -319,21 +320,47 @@ UIManager.prototype.handleMouseDblClick = function(position, e) {
     }
 };
 
-UIManager.prototype.setMousePosition = function(position) {
+UIManager.prototype.setHideMouseTimer = function() {
     "use strict";
+    if (this._mouseInactivityTimeout) {
+        return;
+    }
+    if (this._currentMousePosition && !this._targetMouseWindow) {
+        var uiManager = this;
+        this._mouseInactivityTimeout = setTimeout(function() {
+            uiManager.unsetMousePosition();
+            delete this._mouseInactivityTimeout;
+        }, 2000);
+    }
+};
 
-    // unset currently set mouse position
+UIManager.prototype.unsetMousePosition = function() {
+    "use strict";
     if (this._currentMousePosition) {
         this._video.setColor(this._currentMousePosition,
             getInvertedColorCodeFromHex(this._video.getColor(this._currentMousePosition).color),
             getInvertedColorCodeFromHex(this._video.getColor(this._currentMousePosition).backgroundColor));
+        delete this._currentMousePosition;
     }
+};
+
+UIManager.prototype.setMousePosition = function(position) {
+    "use strict";
+
+    this.unsetMousePosition();
 
     // draw the current mouse position
     this._currentMousePosition = position;
     this._video.setColor(this._currentMousePosition,
         getInvertedColorCodeFromHex(this._video.getColor(position).color),
         getInvertedColorCodeFromHex(this._video.getColor(position).backgroundColor));
+
+    if (this._mouseInactivityTimeout) {
+        clearTimeout(this._mouseInactivityTimeout);
+        delete this._mouseInactivityTimeout;
+    }
+
+    this.setHideMouseTimer();
 };
 
 UIManager.prototype.moveWindowToFront = function(win) {
