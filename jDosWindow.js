@@ -46,6 +46,13 @@ function makeMouseOverHandler(uiManager, position) {
     };
 }
 
+function makeMouseDblClickHandler(uiManager, position) {
+    "use strict";
+    return function(e) {
+        uiManager.handleMouseDblClick(position, e);
+    };
+}
+
 function rgbToHex(rgb) {
     "use strict";
     var a = rgb.split("(")[1].split(")")[0];
@@ -125,6 +132,7 @@ function Video(uiManager, parentElement, columns, rows) {
             cell.onmouseover = makeMouseOverHandler(uiManager, new Position(l, i));
             cell.onmousedown = makeMouseDownHandler(uiManager, new Position(l, i));
             cell.onmouseup = makeMouseUpHandler(uiManager, new Position(l, i));
+            cell.ondblclick = makeMouseDblClickHandler(uiManager, new Position(l, i));
 
             // prevent mouse selection
             cell.style.userSelect = "none";
@@ -285,6 +293,17 @@ UIManager.prototype.handleMouseOver = function(position, e) {
     }
 };
 
+UIManager.prototype.handleMouseDblClick = function(position, e) {
+    "use strict";
+    var i, win, evt = e || window.event;
+    for (i = this._windowStack.length - 1; i >= 0; i = i - 1) {
+        win = this._windowStack[i];
+        if (win.handleMouseDblClick(position, evt)) {
+            break;
+        }
+    }
+};
+
 UIManager.prototype.setMousePosition = function(position) {
     "use strict";
 
@@ -351,6 +370,22 @@ UIWindow.prototype.isDirty = function() {
     return this._isDirty;
 };
 
+UIWindow.prototype.handleMouseDblClick = function (position, evt) {
+    "use strict";
+    if (position.row === this._position.row
+        && position.column > this._position.column // do not include the control
+        && position.column < this._position.column + this._size.width - 1) {
+        if (this._isFullScreen) {
+            this.restoreWindow();
+        }
+        else {
+            this.setFullScreen();
+        }
+        return true;
+    }
+    return false;
+};
+
 UIWindow.prototype.handleMouseDown = function (position, evt) {
     "use strict";
 
@@ -385,6 +420,33 @@ UIWindow.prototype.handleMouseDown = function (position, evt) {
     return false;
 };
 
+UIWindow.prototype.setFullScreen = function() {
+    "use strict";
+    if (this._isFullScreen) {
+        return;
+    }
+
+    this._isFullScreen = true;
+    this._restoreWindow = {
+        position: this._position,
+        size: this._size
+    };
+    this.setPosition(new Position(0, 0));
+    this.setSize(new Size(this._uiManager._video._columns, this._uiManager._video._rows));
+    this.setDirty();
+};
+
+UIWindow.prototype.restoreWindow = function() {
+    "use strict";
+    if (!this._isFullScreen) {
+        return;
+    }
+    this._isFullScreen = false;
+    this.setPosition(this._restoreWindow.position);
+    this.setSize(this._restoreWindow.size);
+    this.setDirty();
+};
+
 UIWindow.prototype.handleMouseUp = function(position, evt) {
     "use strict";
     delete this._inMouseMove;
@@ -398,20 +460,11 @@ UIWindow.prototype.handleMouseUp = function(position, evt) {
         if (this._mouseDownPosition.row === this._position.row
             && this._mouseDownPosition.column === this._position.column + this._size.width - 1) {
             if (this._isFullScreen) {
-                this._isFullScreen = false;
-                this.setPosition(this._restoreWindow.position);
-                this.setSize(this._restoreWindow.size);
+                this.restoreWindow();
             }
             else {
-                this._isFullScreen = true;
-                this._restoreWindow = {
-                    position: this._position,
-                    size: this._size
-                };
-                this.setPosition(new Position(0, 0));
-                this.setSize(new Size(this._uiManager._video._columns, this._uiManager._video._rows));
+                this.setFullScreen();
             }
-            this.setDirty(); // force the resize control to be redrawn even if the window size is already the maximum size
         }
         // close control
         else if (this._mouseDownPosition.row === this._position.row
