@@ -201,6 +201,11 @@ Video.prototype.getColor = function (position) {
 function UIManager(parentElement, columns, rows, theme) {
     "use strict";
     this._video = new Video(this, parentElement, columns, rows);
+    this._workspace = {
+        columns: columns,
+        rows: rows - 1,
+        rowOffset: 1
+    };
     this._theme = theme;
     this.reset();
 }
@@ -300,12 +305,16 @@ UIManager.prototype.handleMouseUp = function(position, e) {
 
 UIManager.prototype.handleMouseOver = function(position, e) {
     "use strict";
-    this.setMousePosition(position);
     if (this._targetMouseWindow) {
+        position = position.row < this._workspace.rowOffset ? new Position(position.column, this._workspace.rowOffset) : position;
+        this.setMousePosition(position);
         var evt = e || window.event;
         if (this._targetMouseWindow.handleMouseOver(position, evt)) {
             this.refresh();
         }
+    }
+    else {
+        this.setMousePosition(position);
     }
 };
 
@@ -473,8 +482,8 @@ UIWindow.prototype.setFullScreen = function() {
         position: this._position,
         size: this._size
     };
-    this.setPosition(new Position(0, 0));
-    this.setSize(new Size(this._uiManager._video._columns, this._uiManager._video._rows));
+    this.setPosition(new Position(0, this._uiManager._workspace.rowOffset));
+    this.setSize(new Size(this._uiManager._workspace.columns, this._uiManager._workspace.rows));
     this.setDirty();
 };
 
