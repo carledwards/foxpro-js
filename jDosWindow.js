@@ -15,6 +15,12 @@ function FoxProTheme() {
             border: {color: 'white', background: 'DarkMagenta' },
             background: {color: 'white', background: 'DarkMagenta'}
         },
+        systemMenu: {
+            color: {color: 'black', background: '#AAAAAA'},
+            highlighted: {color: 'black', background: 'cyan'},
+            hotKey: {color: 'white', background: 'cyan'},
+            disabled: {color: 'cyan', background: '#AAAAAA'}
+        },
         windowShadow: {color: 'gray', background: 'black'}
     };
 }
@@ -199,6 +205,34 @@ Video.prototype.getColor = function (position) {
     };
 };
 
+// ------------------------
+// UISystemMenu
+// ------------------------
+
+function UISystemMenu(uiManager, menuItems) {
+    "use strict";
+    this._uiManager = uiManager;
+    this._menuItems = menuItems;
+}
+
+UISystemMenu.prototype.draw = function() {
+    "use strict";
+    var col;
+    for (col = 0; col < this._uiManager._video._columns; col = col + 1) {
+        this._uiManager._video.setCharacter(new Position(col, 0), ' ', this._uiManager._theme.systemMenu.color);
+    }
+
+    var i, charIndex;
+    col = 1;
+    for (i = 0; i < this._menuItems.length; i = i + 1) {
+        for (charIndex = 0; charIndex < this._menuItems[i].name.length; charIndex = charIndex + 1) {
+            this._uiManager._video.setCharacter(new Position(col, 0), this._menuItems[i].name.charAt(charIndex),
+                this._uiManager._theme.systemMenu.color);
+            col = col + 1;
+        }
+        col = col + 2;
+    }
+};
 
 // ------------------------
 // UIManager
@@ -213,6 +247,9 @@ function UIManager(parentElement, columns, rows, theme) {
         rowOffset: 1
     };
     this._theme = theme;
+    this._systemMenu = new UISystemMenu(this,
+        [{name: 'File'}, {name: 'Edit'}, {name: 'Window'}]
+    );
     this.reset();
 }
 
@@ -258,6 +295,8 @@ UIManager.prototype.refresh = function(forceFlag) {
     for (i = 0; i < this._windowStack.length; i = i + 1) {
         this._windowStack[i].draw();
     }
+
+    this._systemMenu.draw();
 
     // draw the mouse position
     if (this._currentMousePosition) {
