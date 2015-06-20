@@ -7,8 +7,14 @@ function FoxProTheme() {
     "use strict";
     return {
         screenBackground: {color: 'white', background: '#0000AA'},
-        windowBorder: {color: 'yellow', background: '#AAAAAA' },
-        textEdit: {color: 'white', background: '#00AAAA'},
+        window: {
+            border: {color: 'yellow', background: '#AAAAAA' },
+            background: {color: 'white', background: '#00AAAA'}
+        },
+        dialog: {
+            border: {color: 'white', background: 'DarkMagenta' },
+            background: {color: 'white', background: 'DarkMagenta'}
+        },
         windowShadow: {color: 'gray', background: 'black'}
     };
 }
@@ -409,11 +415,42 @@ function UIWindow(title, position, size) {
     this.setSize(size);
     this._isDirty = true;
     this._isFullScreen = false;
-    }
+    this._chromeCharacters = this.getChromeCharacters();
+    this._windowControls = this.getWindowControls();
+}
+
+UIWindow.prototype.getChromeCharacters = function() {
+    "use strict";
+    return {
+        top: ' ',
+        bottom: ' ',
+        left: ' ',
+        right: ' ',
+        topLeftCorner: ' ',
+        topRightCorner: ' ',
+        bottowLeftCorner: ' ',
+        bottomRightCorner: ' '
+    };
+};
+
+UIWindow.prototype.getWindowControls = function() {
+    "use strict";
+    return {
+        close: true,
+        maximize: true,
+        resize: true
+    };
+};
+
+UIWindow.prototype.getWindowThemeColors = function() {
+    "use strict";
+    return this._uiManager._theme.window;
+};
 
 UIWindow.prototype.setUIManager = function (uiManagerObj) {
     "use strict";
     this._uiManager = uiManagerObj;
+    this._windowColor = this.getWindowThemeColors();
 };
 
 UIWindow.prototype.isDirty = function() {
@@ -461,7 +498,9 @@ UIWindow.prototype.handleMouseDown = function (position, evt) {
             }
             else if (position.row === this._position.row + this._size.height - 1
                 && position.column === this._position.column + this._size.width - 1) {
-                this._inMouseResize = {};
+                if (this._windowControls.resize) {
+                    this._inMouseResize = {};
+                }
             }
         }
 
@@ -473,10 +512,12 @@ UIWindow.prototype.handleMouseDown = function (position, evt) {
 
 UIWindow.prototype.setFullScreen = function() {
     "use strict";
+    if (!this._windowControls.maximize) {
+        return;
+    }
     if (this._isFullScreen) {
         return;
     }
-
     this._isFullScreen = true;
     this._restoreWindow = {
         position: this._position,
@@ -489,6 +530,9 @@ UIWindow.prototype.setFullScreen = function() {
 
 UIWindow.prototype.restoreWindow = function() {
     "use strict";
+    if (!this._windowControls.maximize) {
+        return;
+    }
     if (!this._isFullScreen) {
         return;
     }
@@ -520,7 +564,9 @@ UIWindow.prototype.handleMouseUp = function(position, evt) {
         // close control
         else if (this._mouseDownPosition.row === this._position.row
             && this._mouseDownPosition.column === this._position.column) {
-            this._uiManager.removeWindow(this);
+            if (this._windowControls.close) {
+                this._uiManager.removeWindow(this);
+            }
         }
     }
 
@@ -555,31 +601,40 @@ UIWindow.prototype.draw = function () {
         // top
         this._uiManager._video.setCharacter(
             new Position(col + this._position.column, this._position.row),
-            ' ', this._uiManager._theme.windowBorder);
+            this._chromeCharacters.top, this._windowColor.border);
         // bottom
         this._uiManager._video.setCharacter(
             new Position(col + this._position.column, this._position.row + this._size.height - 1),
-            ' ', this._uiManager._theme.windowBorder);
+            this._chromeCharacters.bottom, this._windowColor.border);
     }
 
     for (row = 1; row < this._size.height - 1; row = row + 1) {
         // left
         this._uiManager._video.setCharacter(
             new Position(this._position.column, row + this._position.row),
-            ' ', this._uiManager._theme.windowBorder);
+            this._chromeCharacters.left, this._windowColor.border);
         // right
         this._uiManager._video.setCharacter(
             new Position(this._position.column + this._size.width - 1, row + this._position.row),
-            ' ', this._uiManager._theme.windowBorder);
+            this._chromeCharacters.right, this._windowColor.border);
     }
 
     // draw the chrome controls
-    this._uiManager._video.setCharacter(new Position(this._position.column, this._position.row), '■', this._uiManager._theme.windowBorder);
-    this._uiManager._video.setCharacter(new Position(this._position.column + this._size.width - 1, this._position.row), '≡', this._uiManager._theme.windowBorder);
+    this._uiManager._video.setCharacter(new Position(this._position.column, this._position.row),
+        this._windowControls.close ? '■' : this._chromeCharacters.topLeftCorner,
+        this._windowColor.border);
 
-    if (!this._isFullScreen) {
-        this._uiManager._video.setCharacter(new Position(this._position.column + this._size.width - 1, this._position.row + this._size.height - 1), '.', this._uiManager._theme.windowBorder);
-    }
+    this._uiManager._video.setCharacter(new Position(this._position.column + this._size.width - 1, this._position.row),
+        this._windowControls.maximize ? '≡' : this._chromeCharacters.topRightCorner,
+        this._windowColor.border);
+
+    this._uiManager._video.setCharacter(new Position(this._position.column + this._size.width - 1, this._position.row + this._size.height - 1),
+        this._windowControls.close && !this._isFullScreen ? '.' : this._chromeCharacters.bottomRightCorner,
+        this._windowColor.border);
+
+    this._uiManager._video.setCharacter(new Position(this._position.column, this._position.row + this._size.height - 1),
+        this._chromeCharacters.bottowLeftCorner,
+        this._windowColor.border);
 
     // draw the title (if set)
     if (this._title) {
@@ -587,7 +642,7 @@ UIWindow.prototype.draw = function () {
         for (col = 0; col < maxTitleLength; col = col + 1) {
             this._uiManager._video.setCharacter(
                 new Position(Math.ceil((this._size.width / 2) + this._position.column + col - (maxTitleLength / 2)),
-                    this._position.row), this._title.charAt(col), this._uiManager._theme.windowBorder);
+                    this._position.row), this._title.charAt(col), this._windowColor.border);
         }
     }
 
@@ -613,7 +668,7 @@ UIWindow.prototype.draw = function () {
         for (row = 1; row < this._size.height - 1; row = row + 1) {
             this._uiManager._video.setCharacter(
                 new Position(col + this._position.column, row + this._position.row),
-                ' ', this._uiManager._theme.textEdit);
+                ' ', this._windowColor.background);
         }
     }
 
@@ -644,7 +699,47 @@ UIWindow.prototype.setSize = function (size) {
 UIWindow.prototype.setTitle = function (title) {
     "use strict";
     if (title !== this._title) {
-        this._title = title;
+        this._title = " " + title + " ";
         this.setDirty();
     }
+};
+
+
+// ------------------------
+// UIDialogWindow
+// ------------------------
+
+function UIDialogWindow(title, position, size) {
+    "use strict";
+    UIWindow.call(this, title, position, size);
+}
+
+UIDialogWindow.prototype = Object.create(UIWindow.prototype);
+
+UIDialogWindow.prototype.getChromeCharacters = function() {
+    "use strict";
+    return {
+        top: '═',
+        bottom: '═',
+        left: '║',
+        right: '║',
+        topLeftCorner: '╔',
+        topRightCorner: '╗',
+        bottowLeftCorner: '╚',
+        bottomRightCorner: '╝'
+    };
+};
+
+UIDialogWindow.prototype.getWindowControls = function() {
+    "use strict";
+    return {
+        close: false,
+        maximize: false,
+        resize: false
+    };
+};
+
+UIDialogWindow.prototype.getWindowThemeColors = function() {
+    "use strict";
+    return this._uiManager._theme.dialog;
 };
