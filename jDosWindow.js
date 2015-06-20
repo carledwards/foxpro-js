@@ -641,7 +641,7 @@ UIWindow.prototype.draw = function () {
         var maxTitleLength = this._title.length > this._size.width - 4 ? this._size.width - 4 : this._title.length;
         for (col = 0; col < maxTitleLength; col = col + 1) {
             this._uiManager._video.setCharacter(
-                new Position(Math.ceil((this._size.width / 2) + this._position.column + col - (maxTitleLength / 2)),
+                new Position(Math.floor((this._size.width / 2) + this._position.column + col - (maxTitleLength / 2)),
                     this._position.row), this._title.charAt(col), this._windowColor.border);
         }
     }
