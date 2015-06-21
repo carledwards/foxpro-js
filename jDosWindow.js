@@ -9,10 +9,12 @@ function FoxProTheme() {
         screenBackground: {color: 'white', background: '#0000AA'},
         window: {
             border: {color: 'yellow', background: '#AAAAAA' },
+            border_inactive: {color: 'gray', background: '#AAAAAA' },
             background: {color: 'white', background: '#00AAAA'}
         },
         dialog: {
             border: {color: 'white', background: 'DarkMagenta' },
+            border_inactive: {color: 'gray', background: 'DarkMagenta' },
             background: {color: 'white', background: 'DarkMagenta'}
         },
         systemMenu: {
@@ -293,6 +295,7 @@ UIManager.prototype.refresh = function(forceFlag) {
     }
 
     for (i = 0; i < this._windowStack.length; i = i + 1) {
+        this._windowStack[i].setFocus(i === this._windowStack.length - 1);
         this._windowStack[i].draw();
     }
 
@@ -452,6 +455,7 @@ function UIWindow(title, position, size) {
     this.setTitle(title);
     this.setPosition(position);
     this.setSize(size);
+    this.setFocus(false);
     this._isDirty = true;
     this._isFullScreen = false;
     this._chromeCharacters = this.getChromeCharacters();
@@ -537,7 +541,7 @@ UIWindow.prototype.handleMouseDown = function (position, evt) {
             }
             else if (position.row === this._position.row + this._size.height - 1
                 && position.column === this._position.column + this._size.width - 1) {
-                if (this._windowControls.resize) {
+                if (this._hasFocus && this._windowControls.resize) {
                     this._inMouseResize = {};
                 }
             }
@@ -551,7 +555,7 @@ UIWindow.prototype.handleMouseDown = function (position, evt) {
 
 UIWindow.prototype.setFullScreen = function() {
     "use strict";
-    if (!this._windowControls.maximize) {
+    if (!this._hasFocus || !this._windowControls.maximize) {
         return;
     }
     if (this._isFullScreen) {
@@ -569,7 +573,7 @@ UIWindow.prototype.setFullScreen = function() {
 
 UIWindow.prototype.restoreWindow = function() {
     "use strict";
-    if (!this._windowControls.maximize) {
+    if (!this._hasFocus || !this._windowControls.maximize) {
         return;
     }
     if (!this._isFullScreen) {
@@ -585,6 +589,10 @@ UIWindow.prototype.handleMouseUp = function(position, evt) {
     "use strict";
     delete this._inMouseMove;
     delete this._inMouseResize;
+
+    if (!this._hasFocus) {
+        return;
+    }
 
     // check that the mouse down and up are in the same location
     if (this._mouseDownPosition && this._mouseDownPosition.row === position.row
@@ -635,45 +643,47 @@ UIWindow.prototype.draw = function () {
     "use strict";
     var col, row;
 
+    var borderColor = this._hasFocus ? this._windowColor.border : this._windowColor.border_inactive;
+
     // draw the chrome
     for (col = 0; col < this._size.width; col = col + 1) {
         // top
         this._uiManager._video.setCharacter(
             new Position(col + this._position.column, this._position.row),
-            this._chromeCharacters.top, this._windowColor.border);
+            this._chromeCharacters.top, borderColor);
         // bottom
         this._uiManager._video.setCharacter(
             new Position(col + this._position.column, this._position.row + this._size.height - 1),
-            this._chromeCharacters.bottom, this._windowColor.border);
+            this._chromeCharacters.bottom, borderColor);
     }
 
     for (row = 1; row < this._size.height - 1; row = row + 1) {
         // left
         this._uiManager._video.setCharacter(
             new Position(this._position.column, row + this._position.row),
-            this._chromeCharacters.left, this._windowColor.border);
+            this._chromeCharacters.left, borderColor);
         // right
         this._uiManager._video.setCharacter(
             new Position(this._position.column + this._size.width - 1, row + this._position.row),
-            this._chromeCharacters.right, this._windowColor.border);
+            this._chromeCharacters.right, borderColor);
     }
 
     // draw the chrome controls
     this._uiManager._video.setCharacter(new Position(this._position.column, this._position.row),
-        this._windowControls.close ? '■' : this._chromeCharacters.topLeftCorner,
-        this._windowColor.border);
+        this._hasFocus && this._windowControls.close ? '■' : this._chromeCharacters.topLeftCorner,
+        borderColor);
 
     this._uiManager._video.setCharacter(new Position(this._position.column + this._size.width - 1, this._position.row),
-        this._windowControls.maximize ? '≡' : this._chromeCharacters.topRightCorner,
-        this._windowColor.border);
+        this._hasFocus && this._windowControls.maximize ? '≡' : this._chromeCharacters.topRightCorner,
+        borderColor);
 
     this._uiManager._video.setCharacter(new Position(this._position.column + this._size.width - 1, this._position.row + this._size.height - 1),
-        this._windowControls.close && !this._isFullScreen ? '.' : this._chromeCharacters.bottomRightCorner,
-        this._windowColor.border);
+        this._hasFocus && this._windowControls.close && !this._isFullScreen ? '.' : this._chromeCharacters.bottomRightCorner,
+        borderColor);
 
     this._uiManager._video.setCharacter(new Position(this._position.column, this._position.row + this._size.height - 1),
         this._chromeCharacters.bottowLeftCorner,
-        this._windowColor.border);
+        borderColor);
 
     // draw the title (if set)
     if (this._title) {
@@ -681,7 +691,7 @@ UIWindow.prototype.draw = function () {
         for (col = 0; col < maxTitleLength; col = col + 1) {
             this._uiManager._video.setCharacter(
                 new Position(Math.floor((this._size.width / 2) + this._position.column + col - (maxTitleLength / 2)),
-                    this._position.row), this._title.charAt(col), this._windowColor.border);
+                    this._position.row), this._title.charAt(col), borderColor);
         }
     }
 
@@ -741,6 +751,11 @@ UIWindow.prototype.setTitle = function (title) {
         this._title = " " + title + " ";
         this.setDirty();
     }
+};
+
+UIWindow.prototype.setFocus = function (flag) {
+    "use strict";
+    this._hasFocus = flag;
 };
 
 
