@@ -19,8 +19,8 @@ function FoxProTheme() {
         },
         systemMenu: {
             color: {color: 'black', background: '#AAAAAA'},
-            highlighted: {color: 'black', background: 'cyan'},
-            hotKey: {color: 'white', background: 'cyan'},
+            highlighted: {color: 'black', background: '#00AAAA'},
+            hotKey: {color: 'white', background: '#00AAAA'},
             disabled: {color: 'cyan', background: '#AAAAAA'}
         },
         windowShadow: {color: 'gray', background: 'black'}
@@ -215,11 +215,21 @@ function UISystemMenu(uiManager, menuItems) {
     "use strict";
     this._uiManager = uiManager;
     this._menuItems = menuItems;
+    this._menuSelectionRegions = [];
+    this._selectedMenuItem = -1;
+}
+
+UISystemMenu.prototype.deselect = function() {
+    "use strict";
+    this._selectedMenuItem = -1;
+    this._uiManager.refresh(true);
 }
 
 UISystemMenu.prototype.draw = function() {
     "use strict";
     var col;
+
+    // draw the entire color/background for the menu bar
     for (col = 0; col < this._uiManager._video._columns; col = col + 1) {
         this._uiManager._video.setCharacter(new Position(col, 0), ' ', this._uiManager._theme.systemMenu.color);
     }
@@ -227,13 +237,48 @@ UISystemMenu.prototype.draw = function() {
     var i, charIndex;
     col = 1;
     for (i = 0; i < this._menuItems.length; i = i + 1) {
+        // save off the range for mouse selection
+        this._menuSelectionRegions.push([col - 1, col + this._menuItems[i].name.length]);
+
+        // draw the space before the menu label
+        if (this._selectedMenuItem === i) {
+            this._uiManager._video.setCharacter(new Position(col - 1, 0), ' ', this._uiManager._theme.systemMenu.highlighted);
+        }
+
+        // draw the menu label
         for (charIndex = 0; charIndex < this._menuItems[i].name.length; charIndex = charIndex + 1) {
             this._uiManager._video.setCharacter(new Position(col, 0), this._menuItems[i].name.charAt(charIndex),
-                this._uiManager._theme.systemMenu.color);
+                this._selectedMenuItem === i ? this._uiManager._theme.systemMenu.highlighted : this._uiManager._theme.systemMenu.color);
             col = col + 1;
         }
+
+        // draw the space after the menu label
+        if (this._selectedMenuItem === i) {
+            this._uiManager._video.setCharacter(new Position(col, 0), ' ', this._uiManager._theme.systemMenu.highlighted);
+        }
+
         col = col + 2;
     }
+};
+
+UISystemMenu.prototype.handleMouseDown = function(position) {
+    "use strict";
+    if (position.row !== 0) {
+        return;
+    }
+
+    // reset the currently selected menu item
+    this.deselect();
+
+    var i, range;
+    for (i = 0; i < this._menuSelectionRegions.length; i = i + 1) {
+        range = this._menuSelectionRegions[i];
+        if (position.column >= range[0] && position.column <= range[1]) {
+            this._selectedMenuItem = i;
+            break;
+        }
+    }
+    this._uiManager.refresh(true);
 };
 
 // ------------------------
@@ -326,6 +371,14 @@ UIManager.prototype.eventLoop = function() {
 
 UIManager.prototype.handleMouseDown = function(position, e) {
     "use strict";
+
+    if (position.row === 0) {
+        this._systemMenu.handleMouseDown(position);
+    }
+    else {
+        this._systemMenu.deselect();
+    }
+
     if (this._windowStack.length === 0) {
         return;
     }
