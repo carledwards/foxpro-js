@@ -103,6 +103,83 @@ function getInvertedColorCodeFromHex(hex) {
     return "#" + a;
 }
 
+function drawWindow(uiManager, position, size, title, chromeCharacters, borderColor, background) {
+    "use strict";
+
+    var col, row;
+    // draw the chrome
+    for (col = 0; col < size.width; col = col + 1) {
+        // top
+        uiManager._video.setCharacter(
+            new Position(col + position.column, position.row),
+            chromeCharacters.top, borderColor);
+        // bottom
+        uiManager._video.setCharacter(
+            new Position(col + position.column, position.row + size.height - 1),
+            chromeCharacters.bottom, borderColor);
+    }
+
+    for (row = 1; row < size.height - 1; row = row + 1) {
+        // left
+        uiManager._video.setCharacter(
+            new Position(position.column, row + position.row),
+            chromeCharacters.left, borderColor);
+        // right
+        uiManager._video.setCharacter(
+            new Position(position.column + size.width - 1, row + position.row),
+            chromeCharacters.right, borderColor);
+    }
+
+    // draw the chrome controls
+    uiManager._video.setCharacter(new Position(position.column, position.row),
+        chromeCharacters.topLeftCorner, borderColor);
+
+    uiManager._video.setCharacter(new Position(position.column + size.width - 1, position.row),
+        chromeCharacters.topRightCorner, borderColor);
+
+    uiManager._video.setCharacter(new Position(position.column + size.width - 1, position.row + size.height - 1),
+        chromeCharacters.bottomRightCorner, borderColor);
+
+    uiManager._video.setCharacter(new Position(position.column, position.row + size.height - 1),
+        chromeCharacters.bottomLeftCorner, borderColor);
+
+    // draw the title (if set)
+    if (title) {
+        var maxTitleLength = title.length > size.width - 4 ? size.width - 4 : title.length;
+        for (col = 0; col < maxTitleLength; col = col + 1) {
+            uiManager._video.setCharacter(
+                new Position(Math.floor((size.width / 2) + position.column + col - (maxTitleLength / 2)),
+                    position.row), title.charAt(col), borderColor);
+        }
+    }
+
+    // draw the bottom shadow
+    for (col = 0; col < size.width; col = col + 1) {
+        uiManager._video.setColor(
+            new Position(col + position.column + 2, position.row + size.height),
+            'gray', 'black');
+    }
+
+    // draw the right shadow
+    for (row = 1; row < size.height; row = row + 1) {
+        uiManager._video.setColor(
+            new Position(position.column + size.width, position.row + row),
+            'gray', 'black');
+        uiManager._video.setColor(
+            new Position(position.column + size.width + 1, position.row + row),
+            'gray', 'black');
+    }
+
+    // draw the inside
+    for (col = 1; col < size.width - 1; col = col + 1) {
+        for (row = 1; row < size.height - 1; row = row + 1) {
+            uiManager._video.setCharacter(
+                new Position(col + position.column, row + position.row),
+                ' ', background);
+        }
+    }
+}
+
 // ------------------------
 // Video Screen
 // ------------------------
@@ -222,8 +299,7 @@ function UISystemMenu(uiManager, menuItems) {
 UISystemMenu.prototype.deselect = function() {
     "use strict";
     this._selectedMenuItem = -1;
-    this._uiManager.refresh(true);
-}
+};
 
 UISystemMenu.prototype.draw = function() {
     "use strict";
@@ -236,6 +312,7 @@ UISystemMenu.prototype.draw = function() {
 
     var i, charIndex;
     col = 1;
+    this._menuSelectionRegions = [];
     for (i = 0; i < this._menuItems.length; i = i + 1) {
         // save off the range for mouse selection
         this._menuSelectionRegions.push([col - 1, col + this._menuItems[i].name.length]);
@@ -259,6 +336,23 @@ UISystemMenu.prototype.draw = function() {
 
         col = col + 2;
     }
+
+    if (this._selectedMenuItem !== -1) {
+        drawWindow(this._uiManager, new Position(this._menuSelectionRegions[this._selectedMenuItem][0], 1),
+            new Size(14, this._menuItems[this._selectedMenuItem].items.length + 2), null,
+            {
+                top: '─',
+                bottom: '─',
+                left: '│',
+                right: '│',
+                topLeftCorner: '┌',
+                topRightCorner: '┐',
+                bottomLeftCorner: '└',
+                bottomRightCorner: '┘'
+            },
+            this._uiManager._theme.systemMenu.color, this._uiManager._theme.systemMenu.color);
+
+    }
 };
 
 UISystemMenu.prototype.handleMouseDown = function(position) {
@@ -268,7 +362,8 @@ UISystemMenu.prototype.handleMouseDown = function(position) {
     }
 
     // reset the currently selected menu item
-    this.deselect();
+    var prevItem = this._selectedMenuItem;
+    this._selectedMenuItem = -1;
 
     var i, range;
     for (i = 0; i < this._menuSelectionRegions.length; i = i + 1) {
@@ -278,6 +373,10 @@ UISystemMenu.prototype.handleMouseDown = function(position) {
             break;
         }
     }
+    if (prevItem === this._selectedMenuItem) {
+        this._selectedMenuItem = -1;
+    }
+
     this._uiManager.refresh(true);
 };
 
@@ -295,7 +394,23 @@ function UIManager(parentElement, columns, rows, theme) {
     };
     this._theme = theme;
     this._systemMenu = new UISystemMenu(this,
-        [{name: 'File'}, {name: 'Edit'}, {name: 'Window'}]
+        [
+            {name: 'File', items: [
+                'New',
+                'Open'
+            ]},
+            {name: 'Edit', items: [
+                'Copy',
+                'Paste',
+                'Cut'
+            ]},
+            {name: 'Window', items: [
+                'Next',
+                'Prev',
+                'Close All',
+                'Arrange'
+            ]}
+        ]
     );
     this.reset();
 }
@@ -524,7 +639,7 @@ UIWindow.prototype.getChromeCharacters = function() {
         right: ' ',
         topLeftCorner: ' ',
         topRightCorner: ' ',
-        bottowLeftCorner: ' ',
+        bottomLeftCorner: ' ',
         bottomRightCorner: ' '
     };
 };
@@ -694,85 +809,21 @@ UIWindow.prototype.handleMouseOver = function(position, evt) {
 
 UIWindow.prototype.draw = function () {
     "use strict";
-    var col, row;
+    var col;
 
     var borderColor = this._hasFocus ? this._windowColor.border : this._windowColor.border_inactive;
-
-    // draw the chrome
-    for (col = 0; col < this._size.width; col = col + 1) {
-        // top
-        this._uiManager._video.setCharacter(
-            new Position(col + this._position.column, this._position.row),
-            this._chromeCharacters.top, borderColor);
-        // bottom
-        this._uiManager._video.setCharacter(
-            new Position(col + this._position.column, this._position.row + this._size.height - 1),
-            this._chromeCharacters.bottom, borderColor);
-    }
-
-    for (row = 1; row < this._size.height - 1; row = row + 1) {
-        // left
-        this._uiManager._video.setCharacter(
-            new Position(this._position.column, row + this._position.row),
-            this._chromeCharacters.left, borderColor);
-        // right
-        this._uiManager._video.setCharacter(
-            new Position(this._position.column + this._size.width - 1, row + this._position.row),
-            this._chromeCharacters.right, borderColor);
-    }
-
-    // draw the chrome controls
-    this._uiManager._video.setCharacter(new Position(this._position.column, this._position.row),
-        this._hasFocus && this._windowControls.close ? '■' : this._chromeCharacters.topLeftCorner,
-        borderColor);
-
-    this._uiManager._video.setCharacter(new Position(this._position.column + this._size.width - 1, this._position.row),
-        this._hasFocus && this._windowControls.maximize ? '≡' : this._chromeCharacters.topRightCorner,
-        borderColor);
-
-    this._uiManager._video.setCharacter(new Position(this._position.column + this._size.width - 1, this._position.row + this._size.height - 1),
-        this._hasFocus && this._windowControls.close && !this._isFullScreen ? '.' : this._chromeCharacters.bottomRightCorner,
-        borderColor);
-
-    this._uiManager._video.setCharacter(new Position(this._position.column, this._position.row + this._size.height - 1),
-        this._chromeCharacters.bottowLeftCorner,
-        borderColor);
-
-    // draw the title (if set)
-    if (this._title) {
-        var maxTitleLength = this._title.length > this._size.width - 4 ? this._size.width - 4 : this._title.length;
-        for (col = 0; col < maxTitleLength; col = col + 1) {
-            this._uiManager._video.setCharacter(
-                new Position(Math.floor((this._size.width / 2) + this._position.column + col - (maxTitleLength / 2)),
-                    this._position.row), this._title.charAt(col), borderColor);
-        }
-    }
-
-    // draw the bottom shadow
-    for (col = 0; col < this._size.width; col = col + 1) {
-        this._uiManager._video.setColor(
-            new Position(col + this._position.column + 2, this._position.row + this._size.height),
-            'gray', 'black');
-    }
-
-    // draw the right shadow
-    for (row = 1; row < this._size.height; row = row + 1) {
-        this._uiManager._video.setColor(
-            new Position(this._position.column + this._size.width, this._position.row + row),
-            'gray', 'black');
-        this._uiManager._video.setColor(
-            new Position(this._position.column + this._size.width + 1, this._position.row + row),
-            'gray', 'black');
-    }
-
-    // draw the inside
-    for (col = 1; col < this._size.width - 1; col = col + 1) {
-        for (row = 1; row < this._size.height - 1; row = row + 1) {
-            this._uiManager._video.setCharacter(
-                new Position(col + this._position.column, row + this._position.row),
-                ' ', this._windowColor.background);
-        }
-    }
+    drawWindow(this._uiManager, this._position, this._size, this._title,
+        {
+            top: this._chromeCharacters.top,
+            bottom: this._chromeCharacters.bottom,
+            left: this._chromeCharacters.left,
+            right: this._chromeCharacters.right,
+            topLeftCorner: this._hasFocus && this._windowControls.close ? '■' : this._chromeCharacters.topLeftCorner,
+            topRightCorner: this._hasFocus && this._windowControls.maximize ? '≡' : this._chromeCharacters.topRightCorner,
+            bottomRightCorner: this._hasFocus && this._windowControls.close && !this._isFullScreen ? '.' : this._chromeCharacters.bottomRightCorner,
+            bottomLeftCorner: this._chromeCharacters.bottomLeftCorner
+        },
+        borderColor, this._windowColor.background);
 
     this._isDirty = false;
 };
@@ -832,7 +883,7 @@ UIDialogWindow.prototype.getChromeCharacters = function() {
         right: '║',
         topLeftCorner: '╔',
         topRightCorner: '╗',
-        bottowLeftCorner: '╚',
+        bottomLeftCorner: '╚',
         bottomRightCorner: '╝'
     };
 };
