@@ -381,12 +381,9 @@ UISystemMenu.prototype.processMousePosition = function(position) {
         return;
     }
 
-    // reset the currently selected menu item
-    var prevItem = this._selectedMenuItem;
-    this._selectedMenuItem = -1;
-
     var i, range;
     if (position.row === 0) {
+        this._selectedMenuItem = -1;
         for (i = 0; i < this._menuSelectionRegions.length; i = i + 1) {
             range = this._menuSelectionRegions[i];
             if (position.column >= range[0] && position.column <= range[1]) {
