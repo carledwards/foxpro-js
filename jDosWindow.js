@@ -431,7 +431,6 @@ UISystemMenu.prototype.processMousePosition = function(position) {
 
     if (this._activeMenuItemComponent) {
         var location = this._activeMenuItemComponent.getRelativeMouseLocation(position);
-        console.log(location);
         this._activeMenuItemIndex = location ? location.row : -1;
     }
 
