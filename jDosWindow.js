@@ -103,82 +103,109 @@ function getInvertedColorCodeFromHex(hex) {
     return "#" + a;
 }
 
-function drawWindow(uiManager, position, size, title, chromeCharacters, borderColor, background) {
+function drawWindow(uiComponent, title, chromeCharacters, borderColor, background) {
     "use strict";
 
     var col, row;
-    // draw the chrome
-    for (col = 0; col < size.width; col = col + 1) {
-        // top
-        uiManager._video.setCharacter(
-            new Position(col + position.column, position.row),
-            chromeCharacters.top, borderColor);
-        // bottom
-        uiManager._video.setCharacter(
-            new Position(col + position.column, position.row + size.height - 1),
-            chromeCharacters.bottom, borderColor);
-    }
 
-    for (row = 1; row < size.height - 1; row = row + 1) {
-        // left
-        uiManager._video.setCharacter(
-            new Position(position.column, row + position.row),
-            chromeCharacters.left, borderColor);
-        // right
-        uiManager._video.setCharacter(
-            new Position(position.column + size.width - 1, row + position.row),
-            chromeCharacters.right, borderColor);
-    }
+    if (uiComponent._hasChrome) {
+        // draw the chrome
+        for (col = 0; col < uiComponent._size.width; col = col + 1) {
+            // top
+            uiComponent._uiManager._video.setCharacter(
+                new Position(col + uiComponent._position.column, uiComponent._position.row),
+                chromeCharacters.top, borderColor);
+            // bottom
+            uiComponent._uiManager._video.setCharacter(
+                new Position(col + uiComponent._position.column, uiComponent._position.row + uiComponent._size.height - 1),
+                chromeCharacters.bottom, borderColor);
+        }
 
-    // draw the chrome controls
-    uiManager._video.setCharacter(new Position(position.column, position.row),
-        chromeCharacters.topLeftCorner, borderColor);
+        for (row = 1; row < uiComponent._size.height - 1; row = row + 1) {
+            // left
+            uiComponent._uiManager._video.setCharacter(
+                new Position(uiComponent._position.column, row + uiComponent._position.row),
+                chromeCharacters.left, borderColor);
+            // right
+            uiComponent._uiManager._video.setCharacter(
+                new Position(uiComponent._position.column + uiComponent._size.width - 1, row + uiComponent._position.row),
+                chromeCharacters.right, borderColor);
+        }
 
-    uiManager._video.setCharacter(new Position(position.column + size.width - 1, position.row),
-        chromeCharacters.topRightCorner, borderColor);
+        // draw the chrome controls
+        uiComponent._uiManager._video.setCharacter(new Position(uiComponent._position.column, uiComponent._position.row),
+            chromeCharacters.topLeftCorner, borderColor);
 
-    uiManager._video.setCharacter(new Position(position.column + size.width - 1, position.row + size.height - 1),
-        chromeCharacters.bottomRightCorner, borderColor);
+        uiComponent._uiManager._video.setCharacter(new Position(uiComponent._position.column + uiComponent._size.width - 1, uiComponent._position.row),
+            chromeCharacters.topRightCorner, borderColor);
 
-    uiManager._video.setCharacter(new Position(position.column, position.row + size.height - 1),
-        chromeCharacters.bottomLeftCorner, borderColor);
+        uiComponent._uiManager._video.setCharacter(new Position(uiComponent._position.column + uiComponent._size.width - 1, uiComponent._position.row + uiComponent._size.height - 1),
+            chromeCharacters.bottomRightCorner, borderColor);
 
-    // draw the title (if set)
-    if (title) {
-        var maxTitleLength = title.length > size.width - 4 ? size.width - 4 : title.length;
-        for (col = 0; col < maxTitleLength; col = col + 1) {
-            uiManager._video.setCharacter(
-                new Position(Math.floor((size.width / 2) + position.column + col - (maxTitleLength / 2)),
-                    position.row), title.charAt(col), borderColor);
+        uiComponent._uiManager._video.setCharacter(new Position(uiComponent._position.column, uiComponent._position.row + uiComponent._size.height - 1),
+            chromeCharacters.bottomLeftCorner, borderColor);
+
+        // draw the title (if set)
+        if (title) {
+            var maxTitleLength = title.length > uiComponent._size.width - 4 ? uiComponent._size.width - 4 : title.length;
+            for (col = 0; col < maxTitleLength; col = col + 1) {
+                uiComponent._uiManager._video.setCharacter(
+                    new Position(Math.floor((uiComponent._size.width / 2) + uiComponent._position.column + col - (maxTitleLength / 2)),
+                        uiComponent._position.row), title.charAt(col), borderColor);
+            }
         }
     }
 
     // draw the bottom shadow
-    for (col = 0; col < size.width; col = col + 1) {
-        uiManager._video.setColor(
-            new Position(col + position.column + 2, position.row + size.height),
+    for (col = 0; col < uiComponent._size.width; col = col + 1) {
+        uiComponent._uiManager._video.setColor(
+            new Position(col + uiComponent._position.column + 2, uiComponent._position.row + uiComponent._size.height),
             'gray', 'black');
     }
 
     // draw the right shadow
-    for (row = 1; row < size.height; row = row + 1) {
-        uiManager._video.setColor(
-            new Position(position.column + size.width, position.row + row),
+    for (row = 1; row < uiComponent._size.height; row = row + 1) {
+        uiComponent._uiManager._video.setColor(
+            new Position(uiComponent._position.column + uiComponent._size.width, uiComponent._position.row + row),
             'gray', 'black');
-        uiManager._video.setColor(
-            new Position(position.column + size.width + 1, position.row + row),
+        uiComponent._uiManager._video.setColor(
+            new Position(uiComponent._position.column + uiComponent._size.width + 1, uiComponent._position.row + row),
             'gray', 'black');
     }
 
     // draw the inside
-    for (col = 1; col < size.width - 1; col = col + 1) {
-        for (row = 1; row < size.height - 1; row = row + 1) {
-            uiManager._video.setCharacter(
-                new Position(col + position.column, row + position.row),
+    for (col = uiComponent._hasChrome ? 1 : 0; col < uiComponent._size.width - (uiComponent._hasChrome ? 1 : 0); col = col + 1) {
+        for (row = uiComponent._hasChrome ? 1 : 0; row < uiComponent._size.height - (uiComponent._hasChrome ? 1 : 0); row = row + 1) {
+            uiComponent._uiManager._video.setCharacter(
+                new Position(col + uiComponent._position.column, row + uiComponent._position.row),
                 ' ', background);
         }
     }
 }
+
+// ------------------------
+// UIComponent
+// ------------------------
+function UIComponent(uiManager, position, size, hasChrome) {
+    "use strict";
+    this._uiManager = uiManager;
+    this._position = position;
+    this._size = size;
+    this._hasChrome = hasChrome;
+}
+
+UIComponent.prototype.getRelativeMouseLocation = function(mousePosition) {
+    "use strict";
+    if ((mousePosition.row < this._position.row + (this._hasChrome ? 1 : 0) || mousePosition.row > this._position.row + this._size.height - 1 - (this._hasChrome ? 1 : 0))
+        || (mousePosition.column < this._position.column + (this._hasChrome ? 1 : 0) || mousePosition.column > (this._position.column + this._size.width - 1 - (this._hasChrome ? 1 : 0)))) {
+        return undefined;  // TODO - determine if this is what we should be doing here
+    }
+
+    return {
+        row: mousePosition.row - this._position.row - (this._hasChrome ? 1 : 0),
+        column: mousePosition.column - this._position.column - (this._hasChrome ? 1 : 0)
+    };
+};
 
 // ------------------------
 // Video Screen
@@ -295,12 +322,16 @@ function UISystemMenu(uiManager, menuItems) {
     this._menuSelectionRegions = [];
     this._isActive = false;
     this._selectedMenuBarItem = -1;
+    this._activeMenuItemIndex = -1;
+    this._activeMenuItemComponent = null;
 }
 
 UISystemMenu.prototype.setInactive = function() {
     "use strict";
     this._isActive = false;
     this._selectedMenuBarItem = -1;
+    this._activeMenuItemIndex = -1;
+    this._activeMenuItemComponent = null;
     this._uiManager.refresh(true);
 };
 
@@ -352,8 +383,10 @@ UISystemMenu.prototype.draw = function() {
             itemLen = this._menuItems[this._selectedMenuBarItem].items[i].length;
             maxLen = itemLen > maxLen ? itemLen : maxLen;
         }
-        drawWindow(this._uiManager, new Position(this._menuSelectionRegions[this._selectedMenuBarItem][0], 1),
-            new Size(maxLen + 6, this._menuItems[this._selectedMenuBarItem].items.length + 2), null,
+
+        this._activeMenuItemComponent = new UIComponent(this._uiManager, new Position(this._menuSelectionRegions[this._selectedMenuBarItem][0], 1),
+            new Size(maxLen + 6, this._menuItems[this._selectedMenuBarItem].items.length + 2), true);
+        drawWindow(this._activeMenuItemComponent, null,
             {
                 top: '─',
                 bottom: '─',
@@ -369,9 +402,12 @@ UISystemMenu.prototype.draw = function() {
             for (charIndex = 0; charIndex < this._menuItems[this._selectedMenuBarItem].items[i].length; charIndex = charIndex + 1) {
                 this._uiManager._video.setCharacter(new Position(this._menuSelectionRegions[this._selectedMenuBarItem][0] + 2 + charIndex, i + 2),
                     this._menuItems[this._selectedMenuBarItem].items[i].charAt(charIndex),
-                    this._uiManager._theme.systemMenu.color);
+                    i === this._activeMenuItemIndex ? this._uiManager._theme.systemMenu.highlighted : this._uiManager._theme.systemMenu.color);
             }
         }
+    }
+    else {
+        this._activeMenuItemComponent = null;
     }
 };
 
@@ -392,6 +428,13 @@ UISystemMenu.prototype.processMousePosition = function(position) {
             }
         }
     }
+
+    if (this._activeMenuItemComponent) {
+        var location = this._activeMenuItemComponent.getRelativeMouseLocation(position);
+        console.log(location);
+        this._activeMenuItemIndex = location ? location.row : -1;
+    }
+
     this._uiManager.refresh(true);
 };
 
@@ -848,10 +891,10 @@ UIWindow.prototype.handleMouseOver = function(position, evt) {
 
 UIWindow.prototype.draw = function () {
     "use strict";
-    var col;
 
     var borderColor = this._hasFocus ? this._windowColor.border : this._windowColor.border_inactive;
-    drawWindow(this._uiManager, this._position, this._size, this._title,
+    var windowComponent = new UIComponent(this._uiManager, this._position, this._size, true);
+    drawWindow(windowComponent, this._title,
         {
             top: this._chromeCharacters.top,
             bottom: this._chromeCharacters.bottom,
