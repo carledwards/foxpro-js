@@ -294,13 +294,13 @@ function UISystemMenu(uiManager, menuItems) {
     this._menuItems = menuItems;
     this._menuSelectionRegions = [];
     this._isActive = false;
-    this._selectedMenuItem = -1;
+    this._selectedMenuBarItem = -1;
 }
 
 UISystemMenu.prototype.setInactive = function() {
     "use strict";
     this._isActive = false;
-    this._selectedMenuItem = -1;
+    this._selectedMenuBarItem = -1;
     this._uiManager.refresh(true);
 };
 
@@ -323,19 +323,19 @@ UISystemMenu.prototype.draw = function() {
         this._menuSelectionRegions.push([col - 1, col + this._menuItems[i].name.length]);
 
         // draw the space before the menu label
-        if (this._selectedMenuItem === i) {
+        if (this._selectedMenuBarItem === i) {
             this._uiManager._video.setCharacter(new Position(col - 1, 0), ' ', this._uiManager._theme.systemMenu.highlighted);
         }
 
         // draw the menu label
         for (charIndex = 0; charIndex < this._menuItems[i].name.length; charIndex = charIndex + 1) {
             this._uiManager._video.setCharacter(new Position(col, 0), this._menuItems[i].name.charAt(charIndex),
-                this._selectedMenuItem === i ? this._uiManager._theme.systemMenu.highlighted : this._uiManager._theme.systemMenu.color);
+                this._selectedMenuBarItem === i ? this._uiManager._theme.systemMenu.highlighted : this._uiManager._theme.systemMenu.color);
             col = col + 1;
         }
 
         // draw the space after the menu label
-        if (this._selectedMenuItem === i) {
+        if (this._selectedMenuBarItem === i) {
             this._uiManager._video.setCharacter(new Position(col, 0), ' ', this._uiManager._theme.systemMenu.highlighted);
         }
 
@@ -346,14 +346,14 @@ UISystemMenu.prototype.draw = function() {
         return;
     }
 
-    if (this._selectedMenuItem !== -1) {
+    if (this._selectedMenuBarItem !== -1) {
         var maxLen = 0, itemLen;
-        for (i = 0; i < this._menuItems[this._selectedMenuItem].items.length; i = i + 1) {
-            itemLen = this._menuItems[this._selectedMenuItem].items[i].length;
+        for (i = 0; i < this._menuItems[this._selectedMenuBarItem].items.length; i = i + 1) {
+            itemLen = this._menuItems[this._selectedMenuBarItem].items[i].length;
             maxLen = itemLen > maxLen ? itemLen : maxLen;
         }
-        drawWindow(this._uiManager, new Position(this._menuSelectionRegions[this._selectedMenuItem][0], 1),
-            new Size(maxLen + 6, this._menuItems[this._selectedMenuItem].items.length + 2), null,
+        drawWindow(this._uiManager, new Position(this._menuSelectionRegions[this._selectedMenuBarItem][0], 1),
+            new Size(maxLen + 6, this._menuItems[this._selectedMenuBarItem].items.length + 2), null,
             {
                 top: '─',
                 bottom: '─',
@@ -365,10 +365,10 @@ UISystemMenu.prototype.draw = function() {
                 bottomRightCorner: '┘'
             },
             this._uiManager._theme.systemMenu.color, this._uiManager._theme.systemMenu.color);
-        for (i = 0; i < this._menuItems[this._selectedMenuItem].items.length; i = i + 1) {
-            for (charIndex = 0; charIndex < this._menuItems[this._selectedMenuItem].items[i].length; charIndex = charIndex + 1) {
-                this._uiManager._video.setCharacter(new Position(this._menuSelectionRegions[this._selectedMenuItem][0] + 2 + charIndex, i + 2),
-                    this._menuItems[this._selectedMenuItem].items[i].charAt(charIndex),
+        for (i = 0; i < this._menuItems[this._selectedMenuBarItem].items.length; i = i + 1) {
+            for (charIndex = 0; charIndex < this._menuItems[this._selectedMenuBarItem].items[i].length; charIndex = charIndex + 1) {
+                this._uiManager._video.setCharacter(new Position(this._menuSelectionRegions[this._selectedMenuBarItem][0] + 2 + charIndex, i + 2),
+                    this._menuItems[this._selectedMenuBarItem].items[i].charAt(charIndex),
                     this._uiManager._theme.systemMenu.color);
             }
         }
@@ -383,11 +383,11 @@ UISystemMenu.prototype.processMousePosition = function(position) {
 
     var i, range;
     if (position.row === 0) {
-        this._selectedMenuItem = -1;
+        this._selectedMenuBarItem = -1;
         for (i = 0; i < this._menuSelectionRegions.length; i = i + 1) {
             range = this._menuSelectionRegions[i];
             if (position.column >= range[0] && position.column <= range[1]) {
-                this._selectedMenuItem = i;
+                this._selectedMenuBarItem = i;
                 break;
             }
         }
