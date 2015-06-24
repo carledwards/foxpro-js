@@ -338,8 +338,13 @@ UISystemMenu.prototype.draw = function() {
     }
 
     if (this._selectedMenuItem !== -1) {
+        var maxLen = 0, itemLen;
+        for (i = 0; i < this._menuItems[this._selectedMenuItem].items.length; i = i + 1) {
+            itemLen = this._menuItems[this._selectedMenuItem].items[i].length;
+            maxLen = itemLen > maxLen ? itemLen : maxLen;
+        }
         drawWindow(this._uiManager, new Position(this._menuSelectionRegions[this._selectedMenuItem][0], 1),
-            new Size(14, this._menuItems[this._selectedMenuItem].items.length + 2), null,
+            new Size(maxLen + 6, this._menuItems[this._selectedMenuItem].items.length + 2), null,
             {
                 top: '─',
                 bottom: '─',
@@ -351,7 +356,13 @@ UISystemMenu.prototype.draw = function() {
                 bottomRightCorner: '┘'
             },
             this._uiManager._theme.systemMenu.color, this._uiManager._theme.systemMenu.color);
-
+        for (i = 0; i < this._menuItems[this._selectedMenuItem].items.length; i = i + 1) {
+            for (charIndex = 0; charIndex < this._menuItems[this._selectedMenuItem].items[i].length; charIndex = charIndex + 1) {
+                this._uiManager._video.setCharacter(new Position(this._menuSelectionRegions[this._selectedMenuItem][0] + 2 + charIndex, i + 2),
+                    this._menuItems[this._selectedMenuItem].items[i].charAt(charIndex),
+                    this._uiManager._theme.systemMenu.color);
+            }
+        }
     }
 };
 
