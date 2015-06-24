@@ -293,12 +293,15 @@ function UISystemMenu(uiManager, menuItems) {
     this._uiManager = uiManager;
     this._menuItems = menuItems;
     this._menuSelectionRegions = [];
+    this._isActive = false;
     this._selectedMenuItem = -1;
 }
 
-UISystemMenu.prototype.deselect = function() {
+UISystemMenu.prototype.setInactive = function() {
     "use strict";
+    this._isActive = false;
     this._selectedMenuItem = -1;
+    this._uiManager.refresh(true);
 };
 
 UISystemMenu.prototype.draw = function() {
@@ -309,6 +312,8 @@ UISystemMenu.prototype.draw = function() {
     for (col = 0; col < this._uiManager._video._columns; col = col + 1) {
         this._uiManager._video.setCharacter(new Position(col, 0), ' ', this._uiManager._theme.systemMenu.color);
     }
+
+    // TODO handle too many menu items across the width of the screen
 
     var i, charIndex;
     col = 1;
@@ -335,6 +340,10 @@ UISystemMenu.prototype.draw = function() {
         }
 
         col = col + 2;
+    }
+
+    if (!this._isActive) {
+        return;
     }
 
     if (this._selectedMenuItem !== -1) {
@@ -366,9 +375,9 @@ UISystemMenu.prototype.draw = function() {
     }
 };
 
-UISystemMenu.prototype.handleMouseDown = function(position) {
-    "use strict";
-    if (position.row !== 0) {
+UISystemMenu.prototype.processMousePosition = function(position) {
+   "use strict";
+    if (!this._isActive) {
         return;
     }
 
@@ -377,18 +386,39 @@ UISystemMenu.prototype.handleMouseDown = function(position) {
     this._selectedMenuItem = -1;
 
     var i, range;
-    for (i = 0; i < this._menuSelectionRegions.length; i = i + 1) {
-        range = this._menuSelectionRegions[i];
-        if (position.column >= range[0] && position.column <= range[1]) {
-            this._selectedMenuItem = i;
-            break;
+    if (position.row === 0) {
+        for (i = 0; i < this._menuSelectionRegions.length; i = i + 1) {
+            range = this._menuSelectionRegions[i];
+            if (position.column >= range[0] && position.column <= range[1]) {
+                this._selectedMenuItem = i;
+                break;
+            }
         }
     }
-    if (prevItem === this._selectedMenuItem) {
-        this._selectedMenuItem = -1;
+    this._uiManager.refresh(true);
+};
+
+UISystemMenu.prototype.handleMouseOver = function(position) {
+    "use strict";
+    this.processMousePosition(position);
+};
+
+UISystemMenu.prototype.handleMouseDown = function(position) {
+    "use strict";
+
+    if (this._isActive) {
+        this.setInactive();
+    }
+    else {
+        if (position.row !== 0) {
+            return;
+        }
+        this._isActive = true;
     }
 
-    this._uiManager.refresh(true);
+    if (this._isActive) {
+        this.processMousePosition(position);
+    }
 };
 
 // ------------------------
@@ -502,7 +532,7 @@ UIManager.prototype.handleMouseDown = function(position, e) {
         this._systemMenu.handleMouseDown(position);
     }
     else {
-        this._systemMenu.deselect();
+        this._systemMenu.setInactive();
     }
 
     if (this._windowStack.length === 0) {
@@ -532,7 +562,9 @@ UIManager.prototype.handleMouseUp = function(position, e) {
 
 UIManager.prototype.handleMouseOver = function(position, e) {
     "use strict";
-    if (this._targetMouseWindow) {
+    if (this._systemMenu._isActive) {
+        this._systemMenu.handleMouseOver(position);
+    } else if (this._targetMouseWindow) {
         position = position.row < this._workspace.rowOffset ? new Position(position.column, this._workspace.rowOffset) : position;
         this.setMousePosition(position);
         var evt = e || window.event;
@@ -540,9 +572,8 @@ UIManager.prototype.handleMouseOver = function(position, e) {
             this.refresh();
         }
     }
-    else {
-        this.setMousePosition(position);
-    }
+
+    this.setMousePosition(position);
 };
 
 UIManager.prototype.handleMouseDblClick = function(position, e) {
