@@ -324,19 +324,31 @@ function UISystemMenu(uiManager, menuItems) {
     this._selectedMenuBarItem = -1;
     this._activeMenuItemIndex = -1;
     this._activeMenuItemComponent = null;
+    this._isDirty = true;
 }
 
-UISystemMenu.prototype.setInactive = function() {
+UISystemMenu.prototype.isActive = function() {
     "use strict";
-    this._isActive = false;
+    return this._isActive;
+};
+
+UISystemMenu.prototype.setActive = function(activeFlag) {
+    "use strict";
+    this._isDirty = true;
+    this._isActive = activeFlag;
     this._selectedMenuBarItem = -1;
     this._activeMenuItemIndex = -1;
     this._activeMenuItemComponent = null;
-    this._uiManager.refresh(true);
 };
 
 UISystemMenu.prototype.draw = function() {
     "use strict";
+
+    if (!this._isDirty) {
+        return;
+    }
+    this._isDirty = false;
+
     var col;
 
     // draw the entire color/background for the menu bar
@@ -373,7 +385,7 @@ UISystemMenu.prototype.draw = function() {
         col = col + 2;
     }
 
-    if (!this._isActive) {
+    if (!this.isActive()) {
         return;
     }
 
@@ -411,10 +423,10 @@ UISystemMenu.prototype.draw = function() {
     }
 };
 
-UISystemMenu.prototype.processMousePosition = function(position) {
+UISystemMenu.prototype.processMouseEvent = function(position, evt) {
    "use strict";
-    if (!this._isActive) {
-        return;
+    if (!this.isActive()) {
+        return false;
     }
 
     var i, range;
@@ -424,6 +436,7 @@ UISystemMenu.prototype.processMousePosition = function(position) {
             range = this._menuSelectionRegions[i];
             if (position.column >= range[0] && position.column <= range[1]) {
                 this._selectedMenuBarItem = i;
+                this._isDirty = true;
                 break;
             }
         }
@@ -431,33 +444,31 @@ UISystemMenu.prototype.processMousePosition = function(position) {
 
     if (this._activeMenuItemComponent) {
         var location = this._activeMenuItemComponent.getRelativeMouseLocation(position);
-        this._activeMenuItemIndex = location ? location.row : -1;
-    }
-
-    this._uiManager.refresh(true);
-};
-
-UISystemMenu.prototype.handleMouseOver = function(position) {
-    "use strict";
-    this.processMousePosition(position);
-};
-
-UISystemMenu.prototype.handleMouseDown = function(position) {
-    "use strict";
-
-    if (this._isActive) {
-        this.setInactive();
-    }
-    else {
-        if (position.row !== 0) {
-            return;
+        var updatedActiveMenuItemIndex = location ? location.row : -1;
+        if (updatedActiveMenuItemIndex !== this._activeMenuItemIndex) {
+            this._isDirty = true;
+            this._activeMenuItemIndex = updatedActiveMenuItemIndex;
         }
-        this._isActive = true;
     }
 
-    if (this._isActive) {
-        this.processMousePosition(position);
+    return true;
+};
+
+UISystemMenu.prototype.onMouseOverEvent = function(position, evt) {
+    "use strict";
+    return this.processMouseEvent(position, evt);
+};
+
+UISystemMenu.prototype.onMouseDownEvent = function(position, evt) {
+    "use strict";
+
+    if (this.isActive()) {
+        this.setActive(false);
+        return false; // let the event pass on to the intended target
     }
+
+    this.setActive(position.row === 0);
+    return this.processMouseEvent(position, evt);
 };
 
 // ------------------------
@@ -466,6 +477,7 @@ UISystemMenu.prototype.handleMouseDown = function(position) {
 
 function UIManager(parentElement, columns, rows, theme) {
     "use strict";
+    this._isDirty = true;
     this._video = new Video(this, parentElement, columns, rows);
     this._workspace = {
         columns: columns,
@@ -498,11 +510,13 @@ function UIManager(parentElement, columns, rows, theme) {
 UIManager.prototype.removeWindows = function () {
     "use strict";
     this._windowStack = [];
+    this._isDirty = true;
 };
 
 UIManager.prototype.reset = function () {
     "use strict";
     this.removeWindows();
+    this._systemMenu.setActive(false);
     delete this._currentMousePosition;
     delete this._windowInMove;
 };
@@ -512,11 +526,11 @@ UIManager.prototype.setCharacter = function (position, chr, colorPair) {
     this._video.setCharacter(position, chr, colorPair);
 };
 
-UIManager.prototype.refresh = function(forceFlag) {
+UIManager.prototype.refresh = function() {
     "use strict";
 
     var i;
-    if (!forceFlag) {
+    if (!this._isDirty && !this._systemMenu._isDirty) {
         var isDirty = false;
         for (i = 0; !isDirty && i < this._windowStack.length; i = i + 1) {
             isDirty = this._windowStack[i].isDirty();
@@ -526,10 +540,12 @@ UIManager.prototype.refresh = function(forceFlag) {
             return;
         }
     }
+    this._isDirty = false;
 
     var col, row;
     for (col = 0; col < this._video._columns; col = col + 1) {
-        for (row = 0; row < this._video._rows; row = row + 1) {
+        row = this._systemMenu ? 1 : 0;
+        for (; row < this._video._rows; row = row + 1) {
             this.setCharacter(new Position(col, row), ' ', this._theme.screenBackground);
         }
     }
@@ -556,6 +572,7 @@ UIManager.prototype.pushWindow = function(window) {
     }
     window.setUIManager(this);
     this._windowStack.push(window);
+    this._isDirty = true;
     return window;
 };
 
@@ -567,31 +584,29 @@ UIManager.prototype.eventLoop = function() {
 UIManager.prototype.handleMouseDown = function(position, e) {
     "use strict";
 
-    if (position.row === 0) {
-        this._systemMenu.handleMouseDown(position);
-    }
-    else {
-        this._systemMenu.setInactive();
-    }
-
-    if (this._windowStack.length === 0) {
-        return;
-    }
-    var i, temp, evt = e || window.event;
-    for (i = this._windowStack.length - 1; i >= 0; i = i - 1) {
-        temp = this._windowStack[i];
-        if (temp.handleMouseDown(position, evt)) {
-            this._targetMouseWindow = temp;
-            break;
+    var evt = e || window.event;
+    if (!this._systemMenu.onMouseDownEvent(position, evt)) {
+        if (this._windowStack.length === 0) {
+            return;
+        }
+        var i, temp;
+        for (i = this._windowStack.length - 1; i >= 0; i = i - 1) {
+            temp = this._windowStack[i];
+            if (temp.onMouseDownEvent(position, evt)) {
+                this._targetMouseWindow = temp;
+                break;
+            }
         }
     }
+
+    this.refresh();
 };
 
 UIManager.prototype.handleMouseUp = function(position, e) {
     "use strict";
     if (this._targetMouseWindow) {
         var evt = e || window.event;
-        if(this._targetMouseWindow.handleMouseUp(position, evt)) {
+        if(this._targetMouseWindow.onMouseUpEvent(position, evt)) {
             this.refresh();
         }
         delete this._targetMouseWindow;
@@ -601,17 +616,16 @@ UIManager.prototype.handleMouseUp = function(position, e) {
 
 UIManager.prototype.handleMouseOver = function(position, e) {
     "use strict";
-    if (this._systemMenu._isActive) {
-        this._systemMenu.handleMouseOver(position);
-    } else if (this._targetMouseWindow) {
-        position = position.row < this._workspace.rowOffset ? new Position(position.column, this._workspace.rowOffset) : position;
-        this.setMousePosition(position);
-        var evt = e || window.event;
-        if (this._targetMouseWindow.handleMouseOver(position, evt)) {
-            this.refresh();
+    var evt = e || window.event;
+    if (!this._systemMenu.onMouseOverEvent(position, evt)) {
+        if (this._targetMouseWindow) {
+            position = position.row < this._workspace.rowOffset ? new Position(position.column, this._workspace.rowOffset) : position;
+            this.setMousePosition(position);
+            this._targetMouseWindow.onMouseOverEvent(position, evt);
         }
     }
 
+    this.refresh();
     this.setMousePosition(position);
 };
 
@@ -620,7 +634,7 @@ UIManager.prototype.handleMouseDblClick = function(position, e) {
     var i, win, evt = e || window.event;
     for (i = this._windowStack.length - 1; i >= 0; i = i - 1) {
         win = this._windowStack[i];
-        if (win.handleMouseDblClick(position, evt)) {
+        if (win.onMouseDblClickEvent(position, evt)) {
             break;
         }
     }
@@ -677,7 +691,7 @@ UIManager.prototype.moveWindowToFront = function(win) {
             temp = this._windowStack.splice(i, 1)[0];
             temp.setDirty();
             this._windowStack.push(temp);
-            this.refresh();
+            this._isDirty = true;
             break;
         }
     }
@@ -689,7 +703,7 @@ UIManager.prototype.removeWindow = function(win) {
     for (i = 0; i < this._windowStack.length; i = i + 1) {
         if (this._windowStack[i] === win) {
             this._windowStack.splice(i, 1);
-            this.refresh(true);
+            this._isDirty = true;
             break;
         }
     }
@@ -750,7 +764,7 @@ UIWindow.prototype.isDirty = function() {
     return this._isDirty;
 };
 
-UIWindow.prototype.handleMouseDblClick = function (position, evt) {
+UIWindow.prototype.onMouseDblClickEvent = function (position, evt) {
     "use strict";
     if (position.row === this._position.row
         && position.column > this._position.column // do not include the control
@@ -766,7 +780,7 @@ UIWindow.prototype.handleMouseDblClick = function (position, evt) {
     return false;
 };
 
-UIWindow.prototype.handleMouseDown = function (position, evt) {
+UIWindow.prototype.onMouseDownEvent = function (position, evt) {
     "use strict";
 
     this._mouseDownPosition = position;
@@ -834,13 +848,13 @@ UIWindow.prototype.restoreWindow = function() {
     this.setDirty();
 };
 
-UIWindow.prototype.handleMouseUp = function(position, evt) {
+UIWindow.prototype.onMouseUpEvent = function(position, evt) {
     "use strict";
     delete this._inMouseMove;
     delete this._inMouseResize;
 
     if (!this._hasFocus) {
-        return;
+        return false;
     }
 
     // check that the mouse down and up are in the same location
@@ -870,7 +884,7 @@ UIWindow.prototype.handleMouseUp = function(position, evt) {
     return true;
 };
 
-UIWindow.prototype.handleMouseOver = function(position, evt) {
+UIWindow.prototype.onMouseOverEvent = function(position, evt) {
     "use strict";
     if (this._inMouseMove) {
         this.setPosition(
