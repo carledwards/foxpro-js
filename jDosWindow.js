@@ -7,21 +7,31 @@ function FoxProTheme() {
     "use strict";
     return {
         screenBackground: {color: 'white', background: '#0000AA'},
-        window: {
-            border: {color: 'yellow', background: '#AAAAAA' },
-            border_inactive: {color: 'gray', background: '#AAAAAA' },
-            background: {color: 'white', background: '#00AAAA'}
+        document: {
+            border: {
+                focus: {color: 'yellow', background: '#AAAAAA'},
+                no_focus: {color: 'gray', background: '#AAAAAA'}
+            },
+            background: {
+                focus: {color: 'white', background: '#00AAAA'},
+                no_focus: {color: 'gray', background: '#00AAAA'}
+            }
         },
         dialog: {
-            border: {color: 'white', background: 'DarkMagenta' },
-            border_inactive: {color: 'gray', background: 'DarkMagenta' },
-            background: {color: 'white', background: 'DarkMagenta'}
+            border: {
+                focus: {color: 'white', background: 'DarkMagenta'},
+                no_focus: {color: 'gray', background: 'DarkMagenta'}
+            },
+            background: {
+                focus: {color: 'white', background: 'DarkMagenta'},
+                no_focus: {color: 'gray', background: 'DarkMagenta'}
+            }
         },
-        systemMenu: {
-            color: {color: 'black', background: '#AAAAAA'},
-            highlighted: {color: 'black', background: '#00AAAA'},
-            hotKey: {color: 'white', background: '#00AAAA'},
-            disabled: {color: 'cyan', background: '#AAAAAA'}
+        systemMenuBar: {
+            background: {
+                focus: {color: 'black', background: '#AAAAAA'},
+                no_focus: {color: 'black', background: '#AAAAAA'}
+            }
         },
         windowShadow: {color: 'gray', background: 'black'}
     };
@@ -102,110 +112,6 @@ function getInvertedColorCodeFromHex(hex) {
     a = a.toString(16).slice(-6).toUpperCase();
     return "#" + a;
 }
-
-function drawWindow(uiComponent, title, chromeCharacters, borderColor, background) {
-    "use strict";
-
-    var col, row;
-
-    if (uiComponent._hasChrome) {
-        // draw the chrome
-        for (col = 0; col < uiComponent._size.width; col = col + 1) {
-            // top
-            uiComponent._uiManager._video.setCharacter(
-                new Position(col + uiComponent._position.column, uiComponent._position.row),
-                chromeCharacters.top, borderColor);
-            // bottom
-            uiComponent._uiManager._video.setCharacter(
-                new Position(col + uiComponent._position.column, uiComponent._position.row + uiComponent._size.height - 1),
-                chromeCharacters.bottom, borderColor);
-        }
-
-        for (row = 1; row < uiComponent._size.height - 1; row = row + 1) {
-            // left
-            uiComponent._uiManager._video.setCharacter(
-                new Position(uiComponent._position.column, row + uiComponent._position.row),
-                chromeCharacters.left, borderColor);
-            // right
-            uiComponent._uiManager._video.setCharacter(
-                new Position(uiComponent._position.column + uiComponent._size.width - 1, row + uiComponent._position.row),
-                chromeCharacters.right, borderColor);
-        }
-
-        // draw the chrome controls
-        uiComponent._uiManager._video.setCharacter(new Position(uiComponent._position.column, uiComponent._position.row),
-            chromeCharacters.topLeftCorner, borderColor);
-
-        uiComponent._uiManager._video.setCharacter(new Position(uiComponent._position.column + uiComponent._size.width - 1, uiComponent._position.row),
-            chromeCharacters.topRightCorner, borderColor);
-
-        uiComponent._uiManager._video.setCharacter(new Position(uiComponent._position.column + uiComponent._size.width - 1, uiComponent._position.row + uiComponent._size.height - 1),
-            chromeCharacters.bottomRightCorner, borderColor);
-
-        uiComponent._uiManager._video.setCharacter(new Position(uiComponent._position.column, uiComponent._position.row + uiComponent._size.height - 1),
-            chromeCharacters.bottomLeftCorner, borderColor);
-
-        // draw the title (if set)
-        if (title) {
-            var maxTitleLength = title.length > uiComponent._size.width - 4 ? uiComponent._size.width - 4 : title.length;
-            for (col = 0; col < maxTitleLength; col = col + 1) {
-                uiComponent._uiManager._video.setCharacter(
-                    new Position(Math.floor((uiComponent._size.width / 2) + uiComponent._position.column + col - (maxTitleLength / 2)),
-                        uiComponent._position.row), title.charAt(col), borderColor);
-            }
-        }
-    }
-
-    // draw the bottom shadow
-    for (col = 0; col < uiComponent._size.width; col = col + 1) {
-        uiComponent._uiManager._video.setColor(
-            new Position(col + uiComponent._position.column + 2, uiComponent._position.row + uiComponent._size.height),
-            'gray', 'black');
-    }
-
-    // draw the right shadow
-    for (row = 1; row < uiComponent._size.height; row = row + 1) {
-        uiComponent._uiManager._video.setColor(
-            new Position(uiComponent._position.column + uiComponent._size.width, uiComponent._position.row + row),
-            'gray', 'black');
-        uiComponent._uiManager._video.setColor(
-            new Position(uiComponent._position.column + uiComponent._size.width + 1, uiComponent._position.row + row),
-            'gray', 'black');
-    }
-
-    // draw the inside
-    for (col = uiComponent._hasChrome ? 1 : 0; col < uiComponent._size.width - (uiComponent._hasChrome ? 1 : 0); col = col + 1) {
-        for (row = uiComponent._hasChrome ? 1 : 0; row < uiComponent._size.height - (uiComponent._hasChrome ? 1 : 0); row = row + 1) {
-            uiComponent._uiManager._video.setCharacter(
-                new Position(col + uiComponent._position.column, row + uiComponent._position.row),
-                ' ', background);
-        }
-    }
-}
-
-// ------------------------
-// UIComponent
-// ------------------------
-function UIComponent(uiManager, position, size, hasChrome) {
-    "use strict";
-    this._uiManager = uiManager;
-    this._position = position;
-    this._size = size;
-    this._hasChrome = hasChrome;
-}
-
-UIComponent.prototype.getRelativeMouseLocation = function(mousePosition) {
-    "use strict";
-    if ((mousePosition.row < this._position.row + (this._hasChrome ? 1 : 0) || mousePosition.row > this._position.row + this._size.height - 1 - (this._hasChrome ? 1 : 0))
-        || (mousePosition.column < this._position.column + (this._hasChrome ? 1 : 0) || mousePosition.column > (this._position.column + this._size.width - 1 - (this._hasChrome ? 1 : 0)))) {
-        return undefined;  // TODO - determine if this is what we should be doing here
-    }
-
-    return {
-        row: mousePosition.row - this._position.row - (this._hasChrome ? 1 : 0),
-        column: mousePosition.column - this._position.column - (this._hasChrome ? 1 : 0)
-    };
-};
 
 // ------------------------
 // Video Screen
@@ -291,13 +197,13 @@ Video.prototype.setCharacter = function (position, chr, colorPair) {
     this._videoMap[position.row][position.column].style.backgroundColor = colorPair.background || '';
 };
 
-Video.prototype.setColor = function (position, fcolor, bcolor) {
+Video.prototype.setColor = function (position, colorPair) {
     "use strict";
     if (position.column >= this._columns || position.row >= this._rows || position.column < 0 || position.row < 0) {
         return;
     }
-    this._videoMap[position.row][position.column].style.color = fcolor || '';
-    this._videoMap[position.row][position.column].style.backgroundColor = bcolor || '';
+    this._videoMap[position.row][position.column].style.color = colorPair.color || '';
+    this._videoMap[position.row][position.column].style.backgroundColor = colorPair.background || '';
 };
 
 Video.prototype.getColor = function (position) {
@@ -312,163 +218,260 @@ Video.prototype.getColor = function (position) {
 };
 
 // ------------------------
+// UIComponent
+// ------------------------
+function UIComponent(uiManager, parent, position, size) {
+    "use strict";
+    this._uiManager = uiManager;
+    this._position = position;
+    this._size = size;
+    this._isDirty = true;
+    this._children = [];
+    this._hasFocus = false;
+    this._parent = parent;
+}
+
+UIComponent.prototype.hasShadow = function() {
+    "use strict";
+    return false;
+};
+
+UIComponent.prototype.getTheme = function() {
+    "use strict";
+    throw "getTheme not defined";
+};
+
+UIComponent.prototype.getBorder = function() {
+    "use strict";
+    return null;
+};
+
+UIComponent.prototype.setDirty = function () {
+    "use strict";
+    this._isDirty = true;
+};
+
+UIComponent.prototype.setPosition = function (position) {
+    "use strict";
+    if (!this._position || (position && (position.column !== this._position.column || position.row !== this._position.row))) {
+        this._position = position;
+        this.setDirty();
+    }
+};
+
+UIComponent.prototype.setSize = function (size) {
+    "use strict";
+    if (!this._size || (size && (size.width !== this._size.width || size.height !== this._size.height))) {
+        this._size = size;
+        this.setDirty();
+    }
+};
+
+UIComponent.prototype.isDirty = function() {
+    "use strict";
+    if (this._isDirty) {
+        return true;
+    }
+    var i;
+    for (i = 0; i < this._children.length; i = i + 1) {
+        if (this._children[i] === true) {
+            return true;
+        }
+    }
+    return false;
+};
+
+UIComponent.prototype.getTitle = function() {
+    "use strict";
+    return null;
+};
+
+UIComponent.prototype.getRelativeMouseLocation = function(mousePosition) {
+    "use strict";
+    var borderOffset = this.getBorder() ? 1 : 0;
+    if ((mousePosition.row < this._position.row + borderOffset || mousePosition.row > this._position.row + this._size.height - 1 - borderOffset)
+        || (mousePosition.column < this._position.column + borderOffset || mousePosition.column > (this._position.column + this._size.width - 1 - borderOffset))) {
+        return undefined;  // TODO - determine if this is what we should be doing here
+    }
+
+    return {
+        row: mousePosition.row - this._position.row - borderOffset,
+        column: mousePosition.column - this._position.column - borderOffset
+    };
+};
+
+UIComponent.prototype.drawComponentBase = function() {
+    "use strict";
+
+    var col, row;
+
+    var theme = this.getTheme();
+    var borderCharacters = this.getBorder();
+    if (borderCharacters) {
+        var borderColor = this._hasFocus ? theme.border.focus : theme.border.no_focus;
+        // draw the border
+        for (col = 0; col < this._size.width; col = col + 1) {
+            // top
+            this._uiManager._video.setCharacter(
+                new Position(col + this._position.column, this._position.row),
+                borderCharacters.top, borderColor);
+            // bottom
+            this._uiManager._video.setCharacter(
+                new Position(col + this._position.column, this._position.row + this._size.height - 1),
+                borderCharacters.bottom, borderColor);
+        }
+
+        for (row = 1; row < this._size.height - 1; row = row + 1) {
+            // left
+            this._uiManager._video.setCharacter(
+                new Position(this._position.column, row + this._position.row),
+                borderCharacters.left, borderColor);
+            // right
+            this._uiManager._video.setCharacter(
+                new Position(this._position.column + this._size.width - 1, row + this._position.row),
+                borderCharacters.right, borderColor);
+        }
+
+        // draw the border controls
+        this._uiManager._video.setCharacter(new Position(this._position.column, this._position.row),
+            borderCharacters.topLeftCorner, borderColor);
+
+        this._uiManager._video.setCharacter(new Position(this._position.column + this._size.width - 1, this._position.row),
+            borderCharacters.topRightCorner, borderColor);
+
+        this._uiManager._video.setCharacter(new Position(this._position.column + this._size.width - 1, this._position.row + this._size.height - 1),
+            borderCharacters.bottomRightCorner, borderColor);
+
+        this._uiManager._video.setCharacter(new Position(this._position.column, this._position.row + this._size.height - 1),
+            borderCharacters.bottomLeftCorner, borderColor);
+
+        // draw the title (if set)
+        var title = this.getTitle();
+        if (title) {
+            var maxTitleLength = title.length > this._size.width - 4 ? this._size.width - 4 : title.length;
+            for (col = 0; col < maxTitleLength; col = col + 1) {
+                this._uiManager._video.setCharacter(
+                    new Position(Math.floor((this._size.width / 2) + this._position.column + col - (maxTitleLength / 2)),
+                        this._position.row), title.charAt(col), borderColor);
+            }
+        }
+    }
+
+    if (this.hasShadow()) {
+        // draw the bottom shadow
+        for (col = 0; col < this._size.width; col = col + 1) {
+            this._uiManager._video.setColor(
+                new Position(col + this._position.column + 2, this._position.row + this._size.height),
+                this._uiManager._theme.windowShadow);
+        }
+
+        // draw the right shadow
+        for (row = 1; row < this._size.height; row = row + 1) {
+            this._uiManager._video.setColor(
+                new Position(this._position.column + this._size.width, this._position.row + row),
+                this._uiManager._theme.windowShadow);
+            this._uiManager._video.setColor(
+                new Position(this._position.column + this._size.width + 1, this._position.row + row),
+                this._uiManager._theme.windowShadow);
+        }
+    }
+
+    // draw the inside
+    var borderOffset = this.getBorder() ? 1 : 0;
+    for (col = borderOffset; col < this._size.width - borderOffset; col = col + 1) {
+        for (row = borderOffset; row < this._size.height - borderOffset; row = row + 1) {
+            this._uiManager._video.setCharacter(
+                new Position(col + this._position.column, row + this._position.row),
+                ' ', this._hasFocus ? theme.background.focus : theme.background.no_focus);
+        }
+    }
+};
+
+UIComponent.prototype.innerDraw = function() {
+    "use strict";
+    throw "innerDraw not implemented";
+};
+
+UIComponent.prototype.draw = function(forceDraw) {
+    "use strict";
+    if (this.isDirty() || forceDraw) {
+        this.drawComponentBase();
+        this.innerDraw();
+        var i;
+        for (i = 0; i < this._children.length; i = i + 1) {
+            this._children[i].draw(forceDraw);
+        }
+    }
+    this._isDirty = false;
+};
+
+UIComponent.prototype.setFocus = function(flag) {
+    "use strict";
+    this._hasFocus = flag;
+};
+
+UIComponent.prototype.onMouseDownEvent = function(position, evt) {
+    "use strict";
+    return false;
+};
+
+UIComponent.prototype.onMouseUpEvent = function(position, evt) {
+    "use strict";
+    return false;
+};
+
+UIComponent.prototype.onMouseOverEvent = function(position, evt) {
+    "use strict";
+    return false;
+};
+
+UIComponent.prototype.onMouseDblClickEvent = function(position, evt) {
+    "use strict";
+    return false;
+};
+
+// ------------------------
+// UIMenuBarItem
+// ------------------------
+
+function UIMenuBarItem(uiManager, parent, column, text) {
+    "use strict";
+    UIComponent.call(this, uiManager, parent,
+        new Position(column, 0),
+        new Size(text.length + 2, 1)
+    );
+    this._text = text;
+}
+
+UIMenuBarItem.prototype = Object.create(UIComponent.prototype);
+
+UIMenuBarItem.prototype.innerDraw = function() {
+    "use strict";
+
+};
+
+// ------------------------
 // UISystemMenu
 // ------------------------
 
-function UISystemMenu(uiManager, menuItems) {
+function UISystemMenu(uiManager, config) {
     "use strict";
-    this._uiManager = uiManager;
-    this._menuItems = menuItems;
-    this._menuSelectionRegions = [];
-    this._isActive = false;
-    this._selectedMenuBarItem = -1;
-    this._activeMenuItemIndex = -1;
-    this._activeMenuItemComponent = null;
-    this._isDirty = true;
+    UIComponent.call(this, uiManager, null,
+        new Position(0, 0),
+        new Size(uiManager._video._columns, 1)
+    );
 }
 
-UISystemMenu.prototype.isActive = function() {
+UISystemMenu.prototype = Object.create(UIComponent.prototype);
+
+UISystemMenu.prototype.getTheme = function() {
     "use strict";
-    return this._isActive;
+    return this._uiManager._theme.systemMenuBar;
 };
 
-UISystemMenu.prototype.setActive = function(activeFlag) {
-    "use strict";
-    this._isDirty = true;
-    this._isActive = activeFlag;
-    this._selectedMenuBarItem = -1;
-    this._activeMenuItemIndex = -1;
-    this._activeMenuItemComponent = null;
-};
-
-UISystemMenu.prototype.draw = function() {
+UISystemMenu.prototype.innerDraw = function() {
     "use strict";
 
-    if (!this._isDirty) {
-        return;
-    }
-    this._isDirty = false;
-
-    var col;
-
-    // draw the entire color/background for the menu bar
-    for (col = 0; col < this._uiManager._video._columns; col = col + 1) {
-        this._uiManager._video.setCharacter(new Position(col, 0), ' ', this._uiManager._theme.systemMenu.color);
-    }
-
-    // TODO handle too many menu items across the width of the screen
-
-    var i, charIndex;
-    col = 1;
-    this._menuSelectionRegions = [];
-    for (i = 0; i < this._menuItems.length; i = i + 1) {
-        // save off the range for mouse selection
-        this._menuSelectionRegions.push([col - 1, col + this._menuItems[i].name.length]);
-
-        // draw the space before the menu label
-        if (this._selectedMenuBarItem === i) {
-            this._uiManager._video.setCharacter(new Position(col - 1, 0), ' ', this._uiManager._theme.systemMenu.highlighted);
-        }
-
-        // draw the menu label
-        for (charIndex = 0; charIndex < this._menuItems[i].name.length; charIndex = charIndex + 1) {
-            this._uiManager._video.setCharacter(new Position(col, 0), this._menuItems[i].name.charAt(charIndex),
-                this._selectedMenuBarItem === i ? this._uiManager._theme.systemMenu.highlighted : this._uiManager._theme.systemMenu.color);
-            col = col + 1;
-        }
-
-        // draw the space after the menu label
-        if (this._selectedMenuBarItem === i) {
-            this._uiManager._video.setCharacter(new Position(col, 0), ' ', this._uiManager._theme.systemMenu.highlighted);
-        }
-
-        col = col + 2;
-    }
-
-    if (!this.isActive()) {
-        return;
-    }
-
-    if (this._selectedMenuBarItem !== -1) {
-        var maxLen = 0, itemLen;
-        for (i = 0; i < this._menuItems[this._selectedMenuBarItem].items.length; i = i + 1) {
-            itemLen = this._menuItems[this._selectedMenuBarItem].items[i].length;
-            maxLen = itemLen > maxLen ? itemLen : maxLen;
-        }
-
-        this._activeMenuItemComponent = new UIComponent(this._uiManager, new Position(this._menuSelectionRegions[this._selectedMenuBarItem][0], 1),
-            new Size(maxLen + 6, this._menuItems[this._selectedMenuBarItem].items.length + 2), true);
-        drawWindow(this._activeMenuItemComponent, null,
-            {
-                top: '─',
-                bottom: '─',
-                left: '│',
-                right: '│',
-                topLeftCorner: '┌',
-                topRightCorner: '┐',
-                bottomLeftCorner: '└',
-                bottomRightCorner: '┘'
-            },
-            this._uiManager._theme.systemMenu.color, this._uiManager._theme.systemMenu.color);
-        for (i = 0; i < this._menuItems[this._selectedMenuBarItem].items.length; i = i + 1) {
-            for (charIndex = 0; charIndex < this._menuItems[this._selectedMenuBarItem].items[i].length; charIndex = charIndex + 1) {
-                this._uiManager._video.setCharacter(new Position(this._menuSelectionRegions[this._selectedMenuBarItem][0] + 2 + charIndex, i + 2),
-                    this._menuItems[this._selectedMenuBarItem].items[i].charAt(charIndex),
-                    i === this._activeMenuItemIndex ? this._uiManager._theme.systemMenu.highlighted : this._uiManager._theme.systemMenu.color);
-            }
-        }
-    }
-    else {
-        this._activeMenuItemComponent = null;
-    }
-};
-
-UISystemMenu.prototype.processMouseEvent = function(position, evt) {
-   "use strict";
-    if (!this.isActive()) {
-        return false;
-    }
-
-    var i, range;
-    if (position.row === 0) {
-        this._selectedMenuBarItem = -1;
-        for (i = 0; i < this._menuSelectionRegions.length; i = i + 1) {
-            range = this._menuSelectionRegions[i];
-            if (position.column >= range[0] && position.column <= range[1]) {
-                this._selectedMenuBarItem = i;
-                this._isDirty = true;
-                break;
-            }
-        }
-    }
-
-    if (this._activeMenuItemComponent) {
-        var location = this._activeMenuItemComponent.getRelativeMouseLocation(position);
-        var updatedActiveMenuItemIndex = location ? location.row : -1;
-        if (updatedActiveMenuItemIndex !== this._activeMenuItemIndex) {
-            this._isDirty = true;
-            this._activeMenuItemIndex = updatedActiveMenuItemIndex;
-        }
-    }
-
-    return true;
-};
-
-UISystemMenu.prototype.onMouseOverEvent = function(position, evt) {
-    "use strict";
-    return this.processMouseEvent(position, evt);
-};
-
-UISystemMenu.prototype.onMouseDownEvent = function(position, evt) {
-    "use strict";
-
-    if (this.isActive()) {
-        this.setActive(false);
-        return false; // let the event pass on to the intended target
-    }
-
-    this.setActive(position.row === 0);
-    return this.processMouseEvent(position, evt);
 };
 
 // ------------------------
@@ -486,7 +489,7 @@ function UIManager(parentElement, columns, rows, theme) {
     };
     this._theme = theme;
     this._systemMenu = new UISystemMenu(this,
-        [
+        {'systemMenu': [
             {name: 'File', items: [
                 'New',
                 'Open'
@@ -502,23 +505,25 @@ function UIManager(parentElement, columns, rows, theme) {
                 'Close All',
                 'Arrange'
             ]}
-        ]
+        ]}
     );
     this.reset();
+    this.refresh();
 }
 
 UIManager.prototype.removeWindows = function () {
     "use strict";
     this._windowStack = [];
     this._isDirty = true;
+    this.refresh();
 };
 
 UIManager.prototype.reset = function () {
     "use strict";
-    this.removeWindows();
-    this._systemMenu.setActive(false);
+    this._systemMenu.setFocus(false);
     delete this._currentMousePosition;
     delete this._windowInMove;
+    this.removeWindows();
 };
 
 UIManager.prototype.setCharacter = function (position, chr, colorPair) {
@@ -530,7 +535,7 @@ UIManager.prototype.refresh = function() {
     "use strict";
 
     var i;
-    if (!this._isDirty && !this._systemMenu._isDirty) {
+    if (!this._isDirty && !this._systemMenu.isDirty()) {
         var isDirty = false;
         for (i = 0; !isDirty && i < this._windowStack.length; i = i + 1) {
             isDirty = this._windowStack[i].isDirty();
@@ -552,16 +557,17 @@ UIManager.prototype.refresh = function() {
 
     for (i = 0; i < this._windowStack.length; i = i + 1) {
         this._windowStack[i].setFocus(i === this._windowStack.length - 1);
-        this._windowStack[i].draw();
+        this._windowStack[i].draw(true);
     }
 
-    this._systemMenu.draw();
+    this._systemMenu.draw(true);
 
     // draw the mouse position
     if (this._currentMousePosition) {
-        this._video.setColor(this._currentMousePosition,
-            getInvertedColorCodeFromHex(this._video.getColor(this._currentMousePosition).color),
-            getInvertedColorCodeFromHex(this._video.getColor(this._currentMousePosition).backgroundColor));
+        this._video.setColor(this._currentMousePosition, {
+            color: getInvertedColorCodeFromHex(this._video.getColor(this._currentMousePosition).color),
+            background: getInvertedColorCodeFromHex(this._video.getColor(this._currentMousePosition).backgroundColor)
+        });
     }
 };
 
@@ -570,9 +576,9 @@ UIManager.prototype.pushWindow = function(window) {
     if (!window) {
         return undefined;
     }
-    window.setUIManager(this);
     this._windowStack.push(window);
     this._isDirty = true;
+    this.refresh();
     return window;
 };
 
@@ -622,10 +628,10 @@ UIManager.prototype.handleMouseOver = function(position, e) {
             position = position.row < this._workspace.rowOffset ? new Position(position.column, this._workspace.rowOffset) : position;
             this.setMousePosition(position);
             this._targetMouseWindow.onMouseOverEvent(position, evt);
+            this.refresh();
         }
     }
 
-    this.refresh();
     this.setMousePosition(position);
 };
 
@@ -635,6 +641,7 @@ UIManager.prototype.handleMouseDblClick = function(position, e) {
     for (i = this._windowStack.length - 1; i >= 0; i = i - 1) {
         win = this._windowStack[i];
         if (win.onMouseDblClickEvent(position, evt)) {
+            this.refresh();
             break;
         }
     }
@@ -657,9 +664,10 @@ UIManager.prototype.setHideMouseTimer = function() {
 UIManager.prototype.unsetMousePosition = function() {
     "use strict";
     if (this._currentMousePosition) {
-        this._video.setColor(this._currentMousePosition,
-            getInvertedColorCodeFromHex(this._video.getColor(this._currentMousePosition).color),
-            getInvertedColorCodeFromHex(this._video.getColor(this._currentMousePosition).backgroundColor));
+        this._video.setColor(this._currentMousePosition, {
+            color: getInvertedColorCodeFromHex(this._video.getColor(this._currentMousePosition).color),
+            background: getInvertedColorCodeFromHex(this._video.getColor(this._currentMousePosition).backgroundColor)
+        });
         delete this._currentMousePosition;
     }
 };
@@ -671,9 +679,10 @@ UIManager.prototype.setMousePosition = function(position) {
 
     // draw the current mouse position
     this._currentMousePosition = position;
-    this._video.setColor(this._currentMousePosition,
-        getInvertedColorCodeFromHex(this._video.getColor(position).color),
-        getInvertedColorCodeFromHex(this._video.getColor(position).backgroundColor));
+    this._video.setColor(this._currentMousePosition, {
+        color: getInvertedColorCodeFromHex(this._video.getColor(position).color),
+        background: getInvertedColorCodeFromHex(this._video.getColor(position).backgroundColor)
+    });
 
     if (this._mouseInactivityTimeout) {
         clearTimeout(this._mouseInactivityTimeout);
@@ -713,21 +722,19 @@ UIManager.prototype.removeWindow = function(win) {
 // UIWindow
 // ------------------------
 
-function UIWindow(title, position, size) {
+function UIWindow(uiManager, title, position, size) {
     "use strict";
+    UIComponent.call(this, uiManager, null, position, size);
     this.setTitle(title);
-    this.setPosition(position);
-    this.setSize(size);
-    this.setFocus(false);
-    this._isDirty = true;
     this._isFullScreen = false;
-    this._chromeCharacters = this.getChromeCharacters();
     this._windowControls = this.getWindowControls();
 }
 
-UIWindow.prototype.getChromeCharacters = function() {
+UIWindow.prototype = Object.create(UIComponent.prototype);
+
+UIWindow.prototype.getBorder = function() {
     "use strict";
-    return {
+    var retval = {
         top: ' ',
         bottom: ' ',
         left: ' ',
@@ -737,6 +744,20 @@ UIWindow.prototype.getChromeCharacters = function() {
         bottomLeftCorner: ' ',
         bottomRightCorner: ' '
     };
+
+    if (this._hasFocus) {
+        if (this._windowControls.close) {
+            retval.topLeftCorner = '■';
+        }
+        if (this._windowControls.maximize) {
+            retval.topRightCorner = '≡';
+        }
+        if (this._windowControls.resize) {
+            retval.bottomRightCorner = '.';
+        }
+    }
+
+    return retval;
 };
 
 UIWindow.prototype.getWindowControls = function() {
@@ -748,20 +769,9 @@ UIWindow.prototype.getWindowControls = function() {
     };
 };
 
-UIWindow.prototype.getWindowThemeColors = function() {
+UIWindow.prototype.getTheme = function() {
     "use strict";
-    return this._uiManager._theme.window;
-};
-
-UIWindow.prototype.setUIManager = function (uiManagerObj) {
-    "use strict";
-    this._uiManager = uiManagerObj;
-    this._windowColor = this.getWindowThemeColors();
-};
-
-UIWindow.prototype.isDirty = function() {
-    "use strict";
-    return this._isDirty;
+    return this._uiManager._theme.document;
 };
 
 UIWindow.prototype.onMouseDblClickEvent = function (position, evt) {
@@ -902,46 +912,13 @@ UIWindow.prototype.onMouseOverEvent = function(position, evt) {
     return false;
 };
 
-UIWindow.prototype.draw = function () {
+UIWindow.prototype.innerDraw = function () {
     "use strict";
 
-    var borderColor = this._hasFocus ? this._windowColor.border : this._windowColor.border_inactive;
-    var windowComponent = new UIComponent(this._uiManager, this._position, this._size, true);
-    drawWindow(windowComponent, this._title,
-        {
-            top: this._chromeCharacters.top,
-            bottom: this._chromeCharacters.bottom,
-            left: this._chromeCharacters.left,
-            right: this._chromeCharacters.right,
-            topLeftCorner: this._hasFocus && this._windowControls.close ? '■' : this._chromeCharacters.topLeftCorner,
-            topRightCorner: this._hasFocus && this._windowControls.maximize ? '≡' : this._chromeCharacters.topRightCorner,
-            bottomRightCorner: this._hasFocus && this._windowControls.close && !this._isFullScreen ? '.' : this._chromeCharacters.bottomRightCorner,
-            bottomLeftCorner: this._chromeCharacters.bottomLeftCorner
-        },
-        borderColor, this._windowColor.background);
+    //var borderColor = this._hasFocus ? this._windowColor.border : this._windowColor.border_inactive;
+    //var border = this.getBorder();
+    //drawWindow(this, this._title, this.getBorder(), borderColor, this._windowColor.background);
 
-    this._isDirty = false;
-};
-
-UIWindow.prototype.setDirty = function () {
-    "use strict";
-    this._isDirty = true;
-};
-
-UIWindow.prototype.setPosition = function (position) {
-    "use strict";
-    if (!this._position || (position && (position.column !== this._position.column || position.row !== this._position.row))) {
-        this._position = position;
-        this.setDirty();
-    }
-};
-
-UIWindow.prototype.setSize = function (size) {
-    "use strict";
-    if (!this._size || (size && (size.width !== this._size.width || size.height !== this._size.height))) {
-        this._size = size;
-        this.setDirty();
-    }
 };
 
 UIWindow.prototype.setTitle = function (title) {
@@ -952,24 +929,28 @@ UIWindow.prototype.setTitle = function (title) {
     }
 };
 
-UIWindow.prototype.setFocus = function (flag) {
+UIWindow.prototype.getTitle = function() {
     "use strict";
-    this._hasFocus = flag;
+    return this._title;
 };
 
+UIWindow.prototype.hasShadow = function() {
+    "use strict";
+    return true;
+};
 
 // ------------------------
 // UIDialogWindow
 // ------------------------
 
-function UIDialogWindow(title, position, size) {
+function UIDialogWindow(uiManager, title, position, size) {
     "use strict";
-    UIWindow.call(this, title, position, size);
+    UIWindow.call(this, uiManager, title, position, size);
 }
 
 UIDialogWindow.prototype = Object.create(UIWindow.prototype);
 
-UIDialogWindow.prototype.getChromeCharacters = function() {
+UIDialogWindow.prototype.getBorder = function() {
     "use strict";
     return {
         top: '═',
@@ -992,7 +973,12 @@ UIDialogWindow.prototype.getWindowControls = function() {
     };
 };
 
-UIDialogWindow.prototype.getWindowThemeColors = function() {
+UIDialogWindow.prototype.getTheme = function() {
     "use strict";
     return this._uiManager._theme.dialog;
+};
+
+UIDialogWindow.prototype.hasShadow = function() {
+    "use strict";
+    return true;
 };

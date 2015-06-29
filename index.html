@@ -125,13 +125,13 @@
             uiManagerObj.reset();
             active = "multipleWindows";
 
-            var windowOne = new UIWindow("One", new Position(3, 3), new Size(20, 15));
+            var windowOne = new UIWindow(uiManagerObj, "One", new Position(3, 3), new Size(20, 15));
             uiManagerObj.pushWindow(windowOne);
-            var windowTwo = new UIWindow("Two", new Position(18, 5), new Size(20, 7));
+            var windowTwo = new UIWindow(uiManagerObj, "Two", new Position(18, 5), new Size(20, 7));
             uiManagerObj.pushWindow(windowTwo);
-            var windowThree = new UIWindow("Three", new Position(15, 10), new Size(15, 5));
+            var windowThree = new UIWindow(uiManagerObj, "Three", new Position(15, 10), new Size(15, 5));
             uiManagerObj.pushWindow(windowThree);
-            var dialogOne = new UIDialogWindow("Dialog One", new Position(30, 15), new Size(30, 8));
+            var dialogOne = new UIDialogWindow(uiManagerObj, "Dialog One", new Position(30, 15), new Size(30, 8));
             uiManagerObj.pushWindow(dialogOne);
         };
 
@@ -139,11 +139,11 @@
             uiManagerObj.reset();
             active = "animatedWindows";
 
-            var windowOne = new UIWindow("One", new Position(3, 3), new Size(20, 15));
+            var windowOne = new UIWindow(uiManagerObj, "One", new Position(3, 3), new Size(20, 15));
             uiManagerObj.pushWindow(windowOne);
-            var windowTwo = new UIWindow("Two", new Position(35, 8), new Size(20, 7));
+            var windowTwo = new UIWindow(uiManagerObj, "Two", new Position(35, 8), new Size(20, 7));
             uiManagerObj.pushWindow(windowTwo);
-            var windowThree = new UIWindow("Looooonnnnnnngggggggg", new Position(50, 20), new Size(15, 5));
+            var windowThree = new UIWindow(uiManagerObj, "Looooonnnnnnngggggggg", new Position(50, 20), new Size(15, 5));
             uiManagerObj.pushWindow(windowThree);
 
             var titles = ['AAAAAA', 'bbbbbbb', 'CcCcCcCcCc', 'DDDDDDdddddd'];
