@@ -2,25 +2,123 @@
 <html>
 <head lang="en">
     <meta charset="UTF-8">
-    <title>Test jDosWindows</title>
-    <script src="jDosWindow.js"></script>
+    <title>FoxPro DOS Simulator</title>
+    <script src="foxprodos.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Courier New', monospace;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            margin: 0 0 1.5rem 0;
+            font-size: 1.8rem;
+            font-family: 'Courier New', monospace;
+        }
+        .container {
+            background: #800020;
+            padding: 2rem;
+            border-radius: 0;
+            border: 4px double #fff;
+            box-shadow: none;
+        }
+        .buttons-container {
+            margin-bottom: 1.5rem;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+        .active-button {
+            background-color: #000080 !important;
+            color: white !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        button {
+            padding: 4px 10px;
+            cursor: pointer;
+            background-color: transparent;
+            color: #FFD700;
+            border: none;
+            font-family: 'Courier New', monospace;
+            position: relative;
+            letter-spacing: 0.5px;
+        }
+        button:before {
+            content: '<';
+            margin-right: 4px;
+        }
+        button:after {
+            content: '>';
+            margin-left: 4px;
+        }
+        button:hover {
+            color: white;
+        }
+        #video-container {
+            border: 2px solid #666;
+            background: #000080;
+            position: relative;
+            box-shadow: none;
+        }
+    </style>
 </head>
 <body>
-    <button onclick="multipleWindows()">Multiple Windows</button>
-    <button onclick="animatedWindows()">Animated Windows</button>
-    <button onclick="characterDraw()">Character Draw</button>
-    <br>
-    <br>
-    <div id="video-container">
+    <div class="container">
+        <h1>FoxPro DOS Simulator</h1>
+        <div class="buttons-container">
+            <button id="multipleBtn" onclick="setActiveView('multiple')" class="active-button">Multiple Windows</button>
+            <button id="animatedBtn" onclick="setActiveView('animated')">Animated Windows</button>
+            <button id="characterBtn" onclick="setActiveView('character')">Character Draw</button>
+        </div>
+        <div id="video-container">
+        </div>
     </div>
 
     <script>
         var uiManagerObj = new UIManager(document.getElementById('video-container'), 80, 25, new FoxProTheme());
         var active;
 
+        function setActiveView(view) {
+            // Update button states
+            document.getElementById('multipleBtn').classList.remove('active-button');
+            document.getElementById('animatedBtn').classList.remove('active-button');
+            document.getElementById('characterBtn').classList.remove('active-button');
+            
+            switch(view) {
+                case 'multiple':
+                    document.getElementById('multipleBtn').classList.add('active-button');
+                    multipleWindows();
+                    break;
+                case 'animated':
+                    document.getElementById('animatedBtn').classList.add('active-button');
+                    animatedWindows();
+                    break;
+                case 'character':
+                    document.getElementById('characterBtn').classList.add('active-button');
+                    characterDraw();
+                    break;
+            }
+        }
+
+        // Start the event loop
         setInterval(function() {
             uiManagerObj.eventLoop();
         }, 10);
+
+        // Show multiple windows by default when page loads
+        window.onload = function() {
+            setActiveView('multiple');
+        };
 
         function characterDraw() {
             uiManagerObj.reset();
