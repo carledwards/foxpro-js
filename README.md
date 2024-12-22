@@ -1,2 +1,2 @@
-# jDosWindow
-DOS window fun in a browser
+# foxpro-js
+FoxPro DOS window fun in a browser
